@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Users List</h2>
+
+    <!-- Add Button -->
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'user_add' %}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Add User
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <form method="get" class="card p-3 mb-3">
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" class="form-control" placeholder="Search Username / Name / Email / Role / Employee ID..." value="{{ query }}">
+            </div>
+            <div class="col-12 col-md-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">Search</button>
+                <a href="{% url 'user_list' %}" class="btn btn-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Table -->
+    <div class="card p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Employee ID</th>
+                        <th>Work Station</th>
+                        <th>Signature</th>
+                        <th>Status</th>
+                        <th>Registered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td class="text-end">
+                                <a href="{% url 'user_edit' item.id %}">
+                                    {{ forloop.counter0|add:items.start_index }}
+                                </a>
+                            </td>
+                            <td class="text-start">{{ item.username|default:"-" }}</td>
+                            <td class="text-start">{{ item.full_name|default:"-" }}</td>
+                            <td class="text-start">{{ item.email|default:"-" }}</td>
+                            <td class="text-center">
+                                <span class="badge 
+                                    {% if item.role == 'admin' %}bg-danger
+                                    {% elif item.role == 'management' %}bg-warning
+                                    {% elif item.role == 'supervisor' %}bg-info
+                                    {% elif item.role == 'engineer' %}bg-primary
+                                    {% elif item.role == 'maintenance' %}bg-success
+                                    {% elif item.role == 'leadman' %}bg-secondary
+                                    {% else %}bg-dark
+                                    {% endif %}">
+                                    {{ item.get_role_display }}
+                                </span>
+                            </td>
+                            <td class="text-center">{{ item.employee_id|default:"-" }}</td>
+                            <td class="text-center">{{ item.work_station|default:"-" }}</td>
+                            <td class="text-center">
+                                {% if item.signature %}
+                                    <img src="{{ item.signature.url }}" alt="Signature" style="max-height: 30px; max-width: 80px;">
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if item.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Non active</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.date_joined|date:"d M Y" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center">There is no data.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if items.has_other_pages %}
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                {% if items.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ items.previous_page_number }}&q={{ query }}">Previous</a>
+                    </li>
+                {% endif %}
+                {% for num in items.paginator.page_range %}
+                    {% if items.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > items.number|add:'-3' and num < items.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ query }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if items.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ items.next_page_number }}&q={{ query }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

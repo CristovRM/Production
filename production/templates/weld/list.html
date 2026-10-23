@@ -1,0 +1,381 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <!-- Django Messages Display -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-hide-alert" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <h2 class="mb-4">Record Welding</h2>
+
+<div class="d-flex justify-content-end flex-wrap mb-3 gap-2">
+    <a href="{% url 'weld_excel' %}?q={{ query }}&machine={{ filter_machine }}&date={{ filter_date }}&status={{ filter_status }}"
+       class="btn text-white"
+       style="background-color: #217346;"
+       title="Export to Excel">
+        <i class="fas fa-file-excel me-1"></i> Export Data to SL9
+    </a>
+    
+    <!-- <a href="{% url 'weld_pdf' %}?q={{ query }}&machine={{ filter_machine }}&date={{ filter_date }}&status={{ filter_status }}"
+       class="btn text-white"
+       style="background-color: var(--bs-danger);"
+       target="_blank">
+        <i class="fas fa-file-pdf me-1"></i> Cetak PDF
+    </a> -->
+    
+    <a href="{% url 'weld_add' %}" class="btn btn-success">
+        <i class="fas fa-plus me-1"></i> Tambah Record
+    </a>
+</div>
+
+    <!-- Filter dan Search -->
+    <form method="get" class="card p-3 mb-3">
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label">Pencarian</label>
+                <input type="text" name="q" class="form-control" placeholder="Cari Operator atau Comment..." value="{{ query }}">
+            </div>
+            <div class="col-12 col-lg-2 col-md-3">
+                <label class="form-label">Filter Machine</label>
+                <select name="machine" class="form-select">
+                    <option value="">-- Semua Machine --</option>
+                    {% for machine_option in machine_options %}
+                        <option value="{{ machine_option }}" {% if machine_option == filter_machine %}selected{% endif %}>{{ machine_option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-lg-2 col-md-3">
+                <label class="form-label">Filter Status</label>
+                <select name="status" class="form-select">
+                    {% for value, label in status_options %}
+                        <option value="{{ value }}" {% if value == filter_status %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-lg-2 col-md-3">
+                <label class="form-label">Filter Tanggal</label>
+                <input type="date" name="date" class="form-control" value="{{ filter_date }}">
+            </div>
+            <div class="col-12 col-lg-3 d-flex flex-wrap align-items-end gap-2">
+                <button type="submit" class="btn w-100 w-md-auto text-white" style="background-color: var(--bs-primary);">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+                <a href="{% url 'weld_list' %}" class="btn w-100 w-md-auto text-dark" style="background-color: var(--bs-warning);">
+                    <i class="fas fa-undo me-1"></i> Reset
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tabel -->
+    <div class="card p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Tanggal</th>
+                        <th>Machine</th>
+                        <th>Shift</th>
+                        <th>Operator</th>
+                        <th>Booked Hours</th>
+                        <th>Actual Output</th>
+                        <th>Actual Hours</th>
+                        <th>Status</th>
+                        <th style="width: 150px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in headers %}
+                    <tr>
+                        <td class="text-end">{{ forloop.counter0|add:headers.start_index }}</td>
+                        <td>{{ item.date|date:"d/m/Y" }}</td>
+                        <td class="text-start">{{ item.machine.name }}</td>
+                        <td class="text-start">{{ item.shift.name }}</td>
+                        <td class="text-start">{{ item.operator.name }}</td>
+                        <td class="text-end">{{ item.booked_hours.duration }} hrs</td>
+                        <td class="text-end"><strong>{{ item.calculated_actual_output }}</strong></td>
+                        <td class="text-end"><strong>{{ item.calculated_actual_hours }} hrs</strong></td>
+                        <td>
+                            {% if item.is_posted %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Posted
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-edit me-1"></i>Draft
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-1">
+                                <!-- Tombol Detail (selalu ada) -->
+                                <button type="button" class="btn btn-sm btn-info" 
+                                        onclick="window.location.href='{% url 'weld_detail' item.id %}'" title="Detail">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                
+                                {% if item.is_posted %}
+                                    <!-- Tombol Print Report khusus untuk yang sudah posted -->
+                                    <a href="{% url 'weld_report' item.id %}" 
+                                       class="btn btn-sm btn-success" 
+                                       target="_blank" 
+                                       title="Print Report">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                    
+                                    <!-- Tombol Edit HANYA untuk Admin & Supervisor pada posted records -->
+                                    {% if user.role == 'admin' or user.role == 'supervisor' %}
+                                        <button type="button" class="btn btn-sm btn-warning" 
+                                                onclick="confirmEdit('{{ item.machine.name }} - {{ item.date|date:"d/m/Y" }}', '{% url 'weld_edit' item.id %}', true)" 
+                                                title="Edit (Posted)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Tombol Edit dan Delete untuk yang belum posted -->
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="confirmEdit('{{ item.machine.name }} - {{ item.date|date:"d/m/Y" }}', '{% url 'weld_edit' item.id %}')" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmDelete('{{ item.machine.name }} - {{ item.date|date:"d/m/Y" }}', '{{ item.id }}')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p class="mb-0">Belum ada record welding{% if query or filter_machine or filter_date or filter_status %} yang sesuai dengan filter{% endif %}.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if headers.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center flex-wrap">
+                {% if headers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ headers.previous_page_number }}&q={{ query }}&machine={{ filter_machine }}&date={{ filter_date }}&status={{ filter_status }}">Sebelumnya</a>
+                </li>
+                {% endif %}
+
+                {% for num in headers.paginator.page_range %}
+                    {% if headers.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > headers.number|add:'-3' and num < headers.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}&q={{ query }}&machine={{ filter_machine }}&date={{ filter_date }}&status={{ filter_status }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if headers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ headers.next_page_number }}&q={{ query }}&machine={{ filter_machine }}&date={{ filter_date }}&status={{ filter_status }}">Berikutnya</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+
+    <!-- Filter Summary -->
+    {% if query or filter_machine or filter_date or filter_status %}
+    <div class="mt-3">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Filter Aktif:</strong>
+            {% if query %}<span class="badge bg-primary me-2">Pencarian: "{{ query }}"</span>{% endif %}
+            {% if filter_machine %}<span class="badge bg-secondary me-2">Machine: {{ filter_machine }}</span>{% endif %}
+            {% if filter_status %}<span class="badge bg-{% if filter_status == 'posted' %}success{% else %}warning{% endif %} me-2">Status: {% if filter_status == 'posted' %}Posted{% else %}Draft{% endif %}</span>{% endif %}
+            {% if filter_date %}<span class="badge bg-info me-2">Tanggal: {{ filter_date|date:"d/m/Y" }}</span>{% endif %}
+            <a href="{% url 'weld_list' %}" class="btn btn-sm btn-outline-secondary ms-2">
+                <i class="fas fa-times me-1"></i>Hapus Semua Filter
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Konfirmasi Edit -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Edit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin mengedit record welding <strong id="weldRecordToEdit"></strong>?</p>
+                <p class="text-warning" id="editPostedWarning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <small>Record ini sudah di-posting. Perubahan dapat mempengaruhi laporan.</small>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <a id="editConfirmButton" href="#" class="btn btn-primary">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus record welding <strong id="weldRecordToDelete"></strong>?</p>
+                <p class="text-danger"><small>Tindakan ini tidak dapat dibatalkan!</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide alerts
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 2500);
+    });
+});
+
+// Fungsi untuk konfirmasi edit
+function confirmEdit(weldRecord, editUrl, isPosted = false) {
+    document.getElementById('weldRecordToEdit').textContent = weldRecord;
+    document.getElementById('editConfirmButton').href = editUrl;
+    
+    // Show warning jika posted
+    const warningElement = document.getElementById('editPostedWarning');
+    if (isPosted && warningElement) {
+        warningElement.style.display = 'block';
+    } else if (warningElement) {
+        warningElement.style.display = 'none';
+    }
+    
+    var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    editModal.show();
+}
+
+// Fungsi untuk konfirmasi delete
+function confirmDelete(weldRecord, id) {
+    document.getElementById('weldRecordToDelete').textContent = weldRecord;
+    document.getElementById('deleteForm').action = "{% url 'weld_delete' 0 %}".replace('0', id);
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+
+<style>
+/* Custom alert styles */
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-error, .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info {
+    background-color: #cce8f4;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+/* Smooth fade out animation for auto-hiding alerts */
+.alert.fade {
+    transition: opacity 0.5s ease-out;
+}
+
+.alert i {
+    vertical-align: middle;
+}
+
+/* Custom button styles */
+.d-flex.gap-1 .btn {
+    border-radius: 4px;
+}
+
+/* Action column styling */
+.table td:last-child {
+    white-space: nowrap;
+}
+
+/* Badge styling */
+.badge {
+    font-size: 0.75em;
+    padding: 0.35em 0.65em;
+}
+
+.badge i {
+    font-size: 0.8em;
+}
+
+/* Empty state styling */
+.table tbody tr td .fa-inbox {
+    opacity: 0.3;
+}
+
+/* Filter summary styling */
+.alert .badge {
+    font-size: 0.8em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .col-md-3 {
+        margin-bottom: 1rem;
+    }
+    
+    .d-flex.gap-2 .btn {
+        min-width: 120px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,674 @@
+{% extends 'base.html' %}
+{% block title %}Joint/Pipe numbers list{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <!-- Django Messages Display -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-hide-alert" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <h2 class="mb-4">Daftar Joint Number</h2>
+
+    <!-- Tombol Cetak PDF, Generate, Manual -->
+    <div class="d-flex justify-content-end flex-wrap mb-3 gap-2">
+        <a href="{% url 'jointnumber_pdf' %}?q={{ query }}&bjo={{ filter_bjo }}" class="btn btn-danger text-white" target="_blank">
+            <i class="fas fa-file-pdf me-1"></i> Cetak PDF
+        </a>
+        <a href="{% url 'manual_add_joint_number' %}" class="btn btn-secondary">
+            <i class="fas fa-pencil-alt me-1"></i> Input Manual
+        </a>
+        <a href="{% url 'generate_joint_number' %}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Generate Baru
+        </a>
+    </div>
+
+    <!-- Filter & Search -->
+    <form method="get" class="card p-3 mb-3">
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label">Pencarian</label>
+                <input type="text" name="q" class="form-control" placeholder="Cari Joint Number atau Customer..." value="{{ query }}">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Filter BJO <small class="text-muted">(type to search)</small></label>
+                <select name="bjo" id="bjoSelect" class="form-select">
+                    <option value="">-- Semua BJO --</option>
+                    {% for bjo in bjo_list %}
+                        <option value="{{ bjo.id }}" {% if bjo.id|stringformat:"s" == filter_bjo %}selected{% endif %}>
+                            {{ bjo.bjo }} - {{ bjo.customer }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Items per Page</label>
+                <select name="per_page" class="form-select">
+                    <option value="10" {% if per_page == '10' %}selected{% endif %}>10</option>
+                    <option value="100" {% if per_page == '100' %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex flex-wrap align-items-end gap-2">
+                <button type="submit" class="btn btn-primary w-100 w-md-auto">Filter</button>
+                <a href="{% url 'jointnumber_list' %}" class="btn btn-warning w-100 w-md-auto text-dark">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- ============ TOTAL COUNTS ============ -->
+    <div class="mb-3 p-3 border rounded" style="background-color: #f8f9fa;">
+        <div class="row text-center g-2">
+            <div class="col-12 mb-2">
+                <strong style="font-size: 1.1rem; color: #495057;">
+                    📊 TOTAL SUMMARY ({{ total_filtered }} joints)
+                </strong>
+            </div>
+            
+            <!-- Threading -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-success" style="background-color: #d4edda;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Box Threaded</small>
+                        <strong class="text-success" style="font-size: 1.3rem;">{{ status_counts.box_threaded }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-success" style="background-color: #d4edda;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Pin Threaded</small>
+                        <strong class="text-success" style="font-size: 1.3rem;">{{ status_counts.pin_threaded }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Phosphating -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-info" style="background-color: #d1ecf1;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Box Phosphated</small>
+                        <strong class="text-info" style="font-size: 1.3rem;">{{ status_counts.box_phosphated }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-info" style="background-color: #d1ecf1;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Pin Phosphated</small>
+                        <strong class="text-info" style="font-size: 1.3rem;">{{ status_counts.pin_phosphated }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Welding -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-primary" style="background-color: #cce5ff;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Float Shoe</small>
+                        <strong class="text-primary" style="font-size: 1.3rem;">{{ status_counts.fs_welded }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-primary" style="background-color: #cce5ff;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">FC Box Side</small>
+                        <strong class="text-primary" style="font-size: 1.3rem;">{{ status_counts.fcbs_welded }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-primary" style="background-color: #cce5ff;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">FC Pin Side</small>
+                        <strong class="text-primary" style="font-size: 1.3rem;">{{ status_counts.fcps_welded }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Protection -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-secondary" style="background-color: #e2e3e5;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">BP Installed</small>
+                        <strong class="text-secondary" style="font-size: 1.3rem;">{{ status_counts.bp_installed }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-secondary" style="background-color: #e2e3e5;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">PP Installed</small>
+                        <strong class="text-secondary" style="font-size: 1.3rem;">{{ status_counts.pp_installed }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Beveled - NEW -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-dark" style="background-color: #d6d8db;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Beveled</small>
+                        <strong class="text-dark" style="font-size: 1.3rem;">{{ status_counts.beveled }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Overall Status -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-success" style="background-color: #d4edda;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Finished</small>
+                        <strong class="text-success" style="font-size: 1.3rem;">{{ status_counts.used }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-danger" style="background-color: #f8d7da;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">NCR</small>
+                        <strong class="text-danger" style="font-size: 1.3rem;">{{ status_counts.ncr }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <div class="card border-warning" style="background-color: #fff3cd;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">RWK</small>
+                        <strong class="text-warning" style="font-size: 1.3rem;">{{ status_counts.rwk }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabel -->
+    <div class="card p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th rowspan="2">#</th>
+                        <th rowspan="2">Joint Number</th>
+                        <th rowspan="2">Info BJO</th>
+                        <th colspan="2">Threaded</th>
+                        <th colspan="2">Phosphated</th>
+                        <th colspan="3">Welded</th>
+                        <th colspan="2">Installed</th>
+                        <th rowspan="2">Beveled</th>
+                        <th rowspan="2">Finished</th>
+                        <th rowspan="2">NCR</th>
+                        <th rowspan="2">RWK</th>
+                        <th rowspan="2">Aksi</th>
+                    </tr>
+                    <tr>
+                        <th>Box</th>
+                        <th>Pin</th>
+                        <th>Box</th>
+                        <th>Pin</th>
+                        <th>FS</th>
+                        <th>FCBS</th>
+                        <th>FCPS</th>
+                        <th>BP</th>
+                        <th>PP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sn in joint_numbers %}
+                    <tr>
+                        <td>{{ forloop.counter0|add:joint_numbers.start_index }}</td>
+                        <td><span class="fw-bold">{{ sn.joint_number }}</span></td>
+                        <td class="text-start">
+                            {% if sn.bjo %}
+                                <strong>bjo:</strong> {{ sn.bjo.bjo }} |
+                                <strong>customer:</strong> {{ sn.bjo.customer }} |
+                                {{ sn.bjo.process_type.name }} {{ sn.bjo.size.od }} x {{ sn.bjo.size.thickness }} |
+                                {% if sn.bjo.process_code %}
+                                    {{ sn.bjo.process_code.code }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                                |
+                                <strong>qty:</strong> {{ sn.bjo.qty }} joints
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <!-- Threading Status -->
+                        <td>
+                            <span class="{% if sn.is_box_threaded %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_box_threaded|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if sn.is_pin_threaded %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_pin_threaded|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <!-- Phosphating Status -->
+                        <td>
+                            <span class="{% if sn.is_box_phosphated %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_box_phosphated|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if sn.is_pin_phosphated %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_pin_phosphated|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <!-- Welding Status -->
+                        <td title="Float Shoe Welded">
+                            <span class="{% if sn.is_fs_welded %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_fs_welded|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td title="Float Collar Box Side Welded">
+                            <span class="{% if sn.is_fcbs_welded %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_fcbs_welded|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td title="Float Collar Pin Side Welded">
+                            <span class="{% if sn.is_fcps_welded %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_fcps_welded|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <!-- Protection Status -->
+                        <td title="Box Protector Installed">
+                            <span class="{% if sn.is_bp_installed %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_bp_installed|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td title="Pin Protector Installed">
+                            <span class="{% if sn.is_pp_installed %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_pp_installed|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <!-- Beveled Status - NEW -->
+                        <td title="Beveled">
+                            <span class="{% if sn.is_beveled %}text-success{% else %}text-danger{% endif %}">
+                                {{ sn.is_beveled|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <!-- Overall Status -->
+                        <td>
+                            <span class="{% if sn.is_used %}text-success{% else %}text-warning{% endif %}">
+                                {{ sn.is_used|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if sn.is_ncr %}text-danger{% else %}text-success{% endif %}">
+                                {{ sn.is_ncr|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if sn.is_rwk %}text-warning{% else %}text-muted{% endif %}" 
+                                  title="{% if sn.is_rwk %}Sudah di-rework{% else %}Belum di-rework{% endif %}">
+                                {{ sn.is_rwk|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="confirmEdit('{{ sn.joint_number }}', '{% url 'edit_jointnumber' sn.id %}')" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="confirmDelete('{{ sn.joint_number }}', '{{ sn.id }}')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="17" class="text-center">Belum ada data Joint Number.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if joint_numbers.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center flex-wrap">
+                {% if joint_numbers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ joint_numbers.previous_page_number }}&q={{ query }}&bjo={{ filter_bjo }}&per_page={{ per_page }}">Sebelumnya</a>
+                </li>
+                {% endif %}
+
+                {% for num in joint_numbers.paginator.page_range %}
+                    {% if joint_numbers.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > joint_numbers.number|add:'-3' and num < joint_numbers.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ query }}&bjo={{ filter_bjo }}&per_page={{ per_page }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if joint_numbers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ joint_numbers.next_page_number }}&q={{ query }}&bjo={{ filter_bjo }}&per_page={{ per_page }}">Berikutnya</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Edit -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Edit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin mengedit Joint Number <strong id="jointNumberToEdit"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <a id="editConfirmButton" href="#" class="btn btn-primary">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus Joint Number <strong id="jointNumberToDelete"></strong>?</p>
+                <p class="text-danger"><small>Tindakan ini tidak dapat dibatalkan!</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Select2 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+<!-- jQuery (required for Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 2500);
+    });
+});
+
+// Initialize Select2 after jQuery is loaded
+$(document).ready(function() {
+    // Initialize Select2 on BJO dropdown
+    $('#bjoSelect').select2({
+        placeholder: '-- Semua BJO --',
+        allowClear: true,
+        width: '100%',
+        minimumResultsForSearch: 0,
+        language: {
+            noResults: function() {
+                return 'Tidak ada hasil ditemukan';
+            },
+            searching: function() {
+                return 'Mencari...';
+            }
+        }
+    });
+});
+
+// Fungsi untuk konfirmasi edit
+function confirmEdit(jointNumber, editUrl) {
+    document.getElementById('jointNumberToEdit').textContent = jointNumber;
+    document.getElementById('editConfirmButton').href = editUrl;
+    var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    editModal.show();
+}
+
+// Fungsi untuk konfirmasi delete
+function confirmDelete(jointNumber, id) {
+    document.getElementById('jointNumberToDelete').textContent = jointNumber;
+    document.getElementById('deleteForm').action = "{% url 'delete_jointnumber' 0 %}".replace('0', id);
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+
+<style>
+/* Custom alert styles */
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-error, .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info {
+    background-color: #cce8f4;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.alert.fade {
+    transition: opacity 0.5s ease-out;
+}
+
+.alert i {
+    vertical-align: middle;
+}
+
+/* Table styling improvements */
+.table th {
+    font-size: 0.85rem;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+.table td {
+    font-size: 0.9rem;
+}
+
+/* Status indicators */
+.text-success {
+    color: #28a745 !important;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.text-muted {
+    color: #6c757d !important;
+    font-size: 1.1em;
+}
+
+.table td span[title] {
+    cursor: help;
+    transition: all 0.2s ease;
+}
+
+.table td span[title]:hover {
+    transform: scale(1.2);
+}
+
+/* Summary Cards */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-body small {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.card-body strong {
+    display: block;
+    margin-top: 5px;
+}
+
+/* Select2 Custom Styling */
+.select2-container {
+    z-index: 9999;
+}
+
+.select2-container--default .select2-selection--single {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    height: 38px;
+    padding: 0.375rem 0.75rem;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5;
+    padding-left: 0;
+    color: #212529;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+    right: 3px;
+}
+
+.select2-container--default.select2-container--open .select2-selection--single {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.select2-dropdown {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    z-index: 9999 !important;
+}
+
+.select2-results__option {
+    padding: 0.5rem 0.75rem;
+}
+
+.select2-results__option--highlighted[aria-selected] {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+
+.select2-search--dropdown {
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: block !important;
+}
+
+.select2-search--dropdown .select2-search__field {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.select2-search--dropdown .select2-search__field:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.select2-results__option[aria-selected="true"] {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .table th,
+    .table td {
+        font-size: 0.8rem;
+        padding: 0.5rem;
+    }
+    
+    .col-lg-2 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .card-body strong {
+        font-size: 1.1rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+        display: none;
+    }
+    
+    .col-lg-2, .col-md-3 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    .card-body {
+        padding: 1rem !important;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,55 @@
+/* Layout dasar agar footer tetap di bawah layar */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.app-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.app-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Sidebar responsif untuk layar kecil */
+@media (max-width: 768px) {
+    #app-sidepanel {
+        position: fixed;
+        top: 0;
+        left: -250px;
+        width: 250px;
+        height: 100%;
+        background: #fff;
+        transition: left 0.3s ease-in-out;
+        z-index: 1001;
+        overflow-y: auto;
+    }
+
+    #app-sidepanel.active {
+        left: 0;
+    }
+
+    .sidepanel-drop {
+        display: none;
+        z-index: 1000;
+    }
+
+    .sidepanel-drop.active {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        background: rgba(0,0,0,0.4);
+    }
+}

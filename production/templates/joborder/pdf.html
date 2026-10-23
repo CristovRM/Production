@@ -1,0 +1,357 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan JOB ORDER</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            margin: 40px;
+            color: #333;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 15px;
+        }
+
+        .company-info h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c5282;
+            margin: 0;
+        }
+
+        .header-date {
+            font-size: 10pt;
+            text-align: right;
+            background-color: #f7fafc;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .header-date p {
+            margin: 0;
+        }
+
+        .main-title {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c5282;
+            margin-top: 25px;
+            margin-bottom: 3px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 10pt;
+            font-style: italic;
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        /* Filter info styling */
+        .filter-info {
+            background-color: #e6f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+
+        .filter-info h3 {
+            margin: 0 0 8px 0;
+            font-size: 10pt;
+            color: #2c5282;
+        }
+
+        .filter-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .filter-badge {
+            background-color: #2c5282;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 8pt;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 4px 3px;
+            text-align: center;
+            vertical-align: middle;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            font-size: 7pt;
+        }
+
+        /* OPTIMIZED COLUMN WIDTHS FOR NEW LAYOUT */
+        .col-no { width: 30px; }           /* No - fixed small width */
+        .col-bt { width: 40px; }           /* BT - small */
+        .col-order { width: 300px; }       /* Order - VERY LARGE for all combined info */
+        .col-start { width: 70px; }        /* Start - medium */
+        .col-finish { width: 70px; }       /* Finish - medium */
+        .col-qty { width: 45px; }          /* Qty - small */
+        .col-completed { width: 60px; }    /* Completed - small */
+        .col-remain { width: 60px; }       /* Remain - small */
+        .col-completed-date { width: 80px; } /* Completed Date - medium */
+
+        /* Text alignment for order column */
+        .col-order {
+            text-align: left;
+            font-size: 6.5pt;
+            line-height: 1.0;
+            padding: 2px 3px;
+            vertical-align: top;
+        }
+
+        /* Order detail styling - VERY TIGHT SPACING */
+        .order-detail {
+            margin: 0;
+            padding: 0;
+            line-height: 1.0;
+        }
+
+        .order-detail:last-child {
+            margin-bottom: 0;
+        }
+
+        .order-label {
+            font-weight: bold;
+            color: #2c5282;
+            display: inline-block;
+            min-width: 40px;
+            margin-right: 2px;
+        }
+
+        .order-value {
+            font-weight: bold;
+        }
+
+        .order-bjo {
+            font-weight: bold;
+            color: #d53f8c;
+            font-size: 7pt;
+        }
+
+        .order-customer {
+            color: #2d3748;
+        }
+
+        .order-product {
+            color: #2b6cb0;
+            font-style: italic;
+        }
+
+        /* Date columns - smaller font */
+        .col-start, .col-finish, .col-completed-date {
+            font-size: 6pt;
+            padding: 2px;
+        }
+
+        /* Number columns - smaller font */
+        .col-no, .col-qty, .col-completed, .col-remain {
+            font-size: 7pt;
+        }
+
+        /* Code columns - smaller font */
+        .col-bt {
+            font-size: 6.5pt;
+        }
+
+        @media print {
+            body {
+                margin: 15px;
+                font-size: 9pt;
+            }
+
+            table {
+                font-size: 6pt;
+            }
+
+            th, td {
+                padding: 2px 1px;
+            }
+
+            .col-order {
+                font-size: 5.5pt;
+                padding: 1px 2px;
+                line-height: 0.9;
+            }
+
+            .order-detail {
+                margin: 0;
+                padding: 0;
+                line-height: 0.9;
+            }
+
+            .order-bjo {
+                font-size: 6pt;
+            }
+
+            .filter-info {
+                font-size: 8pt;
+            }
+
+            .filter-badge {
+                font-size: 7pt;
+            }
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-size: 9pt;
+            text-align: right;
+            color: #777;
+            border-top: 1px dashed #aaa;
+            padding-top: 8px;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f8ff;
+        }
+        
+        /* Row selesai */
+        .row-finished { background-color: #d4edda !important; }            /* hijau muda, tidak kontras */
+        tbody tr.row-finished:nth-child(even) { background-color: #d4edda !important; }
+        tbody tr.row-finished:hover { background-color: #cfe9d6 !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Header tanpa logo -->
+    <div class="header-top">
+        <div class="company-info">
+            <h1>PT. H-Tech Oil Field Equipment</h1>
+        </div>
+        <div class="header-date">
+            <p><strong>Tanggal Cetak:</strong><br>{{ today|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+
+    <!-- Judul -->
+    <div class="main-title">LAPORAN JOB ORDER</div>
+    <div class="subtitle">
+        {% if has_filters %}
+            Daftar Job Order berdasarkan filter yang dipilih
+        {% else %}
+            Daftar Job Order yang telah terdaftar dalam sistem
+        {% endif %}
+    </div>
+
+    <!-- Info Filter Aktif -->
+    {% if has_filters %}
+    <div class="filter-info">
+        <h3>Filter yang Diterapkan:</h3>
+        <div class="filter-badges">
+            {% for filter in filter_info %}
+                <span class="filter-badge">{{ filter }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabel -->
+    <table>
+        <thead>
+            <tr>
+                <th class="col-no">No</th>
+                <th class="col-bt">BT</th>
+                <th class="col-order">Order</th>
+                <th class="col-start">Start</th>
+                <th class="col-finish">Finish</th>
+                <th class="col-qty">Qty</th>
+                <th class="col-completed">Completed</th>
+                <th class="col-remain">Remain</th>
+                <th class="col-completed-date">Finish Date</th>
+            </tr>
+        </thead>
+        <tbody>
+    {% for item in jobs %}
+    {% with remain=item.remaining_qty|default:0 %}
+    <tr class="{% if item.finish_date or remain <= 0 %}row-finished{% endif %}">
+        <td class="col-no">{{ forloop.counter }}</td>
+        <td class="col-bt">{{ item.bt|default:"-" }}</td>
+        <td class="col-order">
+            <div class="order-detail">
+                <span class="order-label order-bjo">BJO:</span> <span class="order-value">{{ item.bjo }}</span>
+            </div>
+            <div class="order-detail">
+                <span class="order-label order-customer">CUSTOMER:</span> <span class="order-value">{{ item.customer }}</span>
+            </div>
+            <div class="order-detail">
+                <span class="order-label order-product">DESC:</span> <span class="order-value">{{ item.product }}</span>
+            </div>
+        </td>
+        <td class="col-start">{{ item.start_date|date:"M j, Y"|default:"-" }}</td>
+        <td class="col-finish">{{ item.finish_date|date:"M j, Y"|default:"-" }}</td>
+        <td class="col-qty">{{ item.qty }}</td>
+        <td class="col-completed">{{ item.total_finished }}</td>
+        <td class="col-remain">{{ item.remaining_qty }}</td>
+
+        <!-- Completed Date hanya tampil kalau memang sudah finish -->
+        <td class="col-completed-date">
+            {% if item.finish_date %}
+                {{ item.finish_date|date:"M j, Y" }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+    </tr>
+    {% endwith %}
+    {% empty %}
+    <tr>
+        <td colspan="9">
+            {% if has_filters %}
+                Tidak ada data dengan filter yang dipilih.
+            {% else %}
+                Tidak ada data tersedia.
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Dokumen ini dihasilkan secara otomatis oleh sistem.</p>
+        {% if has_filters %}
+        <p>Total data yang ditampilkan: {{ jobs|length }} record</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>

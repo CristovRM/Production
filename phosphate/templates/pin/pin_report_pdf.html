@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Pin Protector Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #333; padding: 6px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .status { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Laporan Pemasangan Pin Protector</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Protector Number</th>
+                <th>Terpasang ke</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detail in pin_details %}
+            <tr>
+                <td>{{ detail.protector_number }}</td>
+                <td>
+                    {% if detail.installed_to %}
+                        {{ detail.installed_to }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="status">
+                    {% if detail.is_installed %}
+                        Sudah dipasang
+                    {% else %}
+                        Belum dipasang
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">NOV XL Systems - Phosphate Area</h1>
+        <p class="lead text-muted">Phosphate Management Dashboard</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <!-- Box Protector Stats -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-box me-2"></i>Box Protector</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="text-success mb-1">
+                                <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                            </div>
+                            <h4 class="fw-bold mb-0">{{ stats.box_total_finished }}</h4>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-warning mb-1">
+                                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                            </div>
+                            <h4 class="fw-bold mb-0">{{ stats.box_total_progress }}</h4>
+                            <small class="text-muted">In Progress</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pin Protector Stats -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-pin-angle me-2"></i>Pin Protector</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="text-success mb-1">
+                                <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                            </div>
+                            <h4 class="fw-bold mb-0">{{ stats.pin_total_finished }}</h4>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-warning mb-1">
+                                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                            </div>
+                            <h4 class="fw-bold mb-0">{{ stats.pin_total_progress }}</h4>
+                            <small class="text-muted">In Progress</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipe Stats -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-layers me-2"></i>Pipe</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="text-success mb-1">
+                                <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                            </div>
+                            <h4 class="fw-bold mb-0">{{ stats.pipe_total_finished }}</h4>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-warning mb-1">
+                                <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                            </div>
+                            <h4 class="fw-bold mb-0">{{ stats.pipe_total_progress }}</h4>
+                            <small class="text-muted">In Progress</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOX PROTECTOR Section -->
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <h4 class="mb-3"><i class="bi bi-box me-2"></i>Box Protector</h4>
+        </div>
+        
+        <!-- Box Completed -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-check-circle me-2"></i>Completed (Last 5)</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if box_finished %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Phosphated</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bjo in box_finished %}
+                                <tr>
+                                    <td class="fw-bold">{{ bjo.bjo }}</td>
+                                    <td>{{ bjo.customer }}</td>
+                                    <td>{{ bjo.size }}</td>
+                                    <td>{{ bjo.qty }}</td>
+                                    <td><span class="badge bg-success">{{ bjo.total_phosphated }}</span></td>
+                                    <td>{{ bjo.finish_date|date:"d M Y"|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No completed box protector yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Box In Progress -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>In Progress (Last 5)</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if box_progress %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Progress</th>
+                                    <th>Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bjo in box_progress %}
+                                <tr>
+                                    <td class="fw-bold">{{ bjo.bjo }}</td>
+                                    <td>{{ bjo.customer }}</td>
+                                    <td>{{ bjo.size }}</td>
+                                    <td>{{ bjo.qty }}</td>
+                                    <td><span class="badge bg-warning text-dark">{{ bjo.total_phosphated }}</span></td>
+                                    <td><span class="badge bg-secondary">{{ bjo.remaining_qty }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No box protector in progress</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIN PROTECTOR Section -->
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <h4 class="mb-3"><i class="bi bi-pin-angle me-2"></i>Pin Protector</h4>
+        </div>
+        
+        <!-- Pin Completed -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-check-circle me-2"></i>Completed (Last 5)</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if pin_finished %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Phosphated</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bjo in pin_finished %}
+                                <tr>
+                                    <td class="fw-bold">{{ bjo.bjo }}</td>
+                                    <td>{{ bjo.customer }}</td>
+                                    <td>{{ bjo.size }}</td>
+                                    <td>{{ bjo.qty }}</td>
+                                    <td><span class="badge bg-success">{{ bjo.total_phosphated }}</span></td>
+                                    <td>{{ bjo.finish_date|date:"d M Y"|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No completed pin protector yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Pin In Progress -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>In Progress (Last 5)</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if pin_progress %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Progress</th>
+                                    <th>Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bjo in pin_progress %}
+                                <tr>
+                                    <td class="fw-bold">{{ bjo.bjo }}</td>
+                                    <td>{{ bjo.customer }}</td>
+                                    <td>{{ bjo.size }}</td>
+                                    <td>{{ bjo.qty }}</td>
+                                    <td><span class="badge bg-warning text-dark">{{ bjo.total_phosphated }}</span></td>
+                                    <td><span class="badge bg-secondary">{{ bjo.remaining_qty }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No pin protector in progress</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIPE Section -->
+    <div class="row g-4">
+        <div class="col-12">
+            <h4 class="mb-3"><i class="bi bi-layers me-2"></i>Pipe</h4>
+        </div>
+        
+        <!-- Pipe Completed -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-check-circle me-2"></i>Completed (Last 5)</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if pipe_finished %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Phosphated</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bjo in pipe_finished %}
+                                <tr>
+                                    <td class="fw-bold">{{ bjo.bjo }}</td>
+                                    <td>{{ bjo.customer }}</td>
+                                    <td>{{ bjo.size }}</td>
+                                    <td>{{ bjo.qty }}</td>
+                                    <td><span class="badge bg-success">{{ bjo.total_phosphated }}</span></td>
+                                    <td>{{ bjo.finish_date|date:"d M Y"|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No completed pipe phosphate yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Pipe In Progress -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>In Progress (Last 5)</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if pipe_progress %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Progress</th>
+                                    <th>Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bjo in pipe_progress %}
+                                <tr>
+                                    <td class="fw-bold">{{ bjo.bjo }}</td>
+                                    <td>{{ bjo.customer }}</td>
+                                    <td>{{ bjo.size }}</td>
+                                    <td>{{ bjo.qty }}</td>
+                                    <td><span class="badge bg-warning text-dark">{{ bjo.total_phosphated }}</span></td>
+                                    <td><span class="badge bg-secondary">{{ bjo.remaining_qty }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No pipe phosphate in progress</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% endblock %}

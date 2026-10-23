@@ -1,0 +1,885 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-12 col-md-6">
+            <h2>Finalisasi Welding Record</h2>
+        </div>
+        <div class="col-12 col-md-6 text-md-end text-start mt-2 mt-md-0">
+            <a class="btn btn-primary text-uppercase" href="{% url 'weld_list' %}">
+                <i class="fas fa-arrow-left me-1"></i> Kembali ke List
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if header %}
+        <div class="card p-3 mb-3">
+            <h5 class="mb-3">Welding Header Information</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tr><td width="180">Date</td><td width="10">:</td><td>{{ header.date|date:"d/m/Y" }}</td></tr>
+                    <tr><td>Machine</td><td>:</td><td>{{ header.machine.name }}</td></tr>
+                    <tr><td>Shift</td><td>:</td><td>{{ header.shift.name }}</td></tr>
+                    <tr><td>Operator</td><td>:</td><td>{{ header.operator.name }} ({{ header.operator.initial }})</td></tr>
+                    <tr><td>Booked Hours</td><td>:</td><td>{{ header.booked_hours.name }} ({{ booked_duration }} hrs)</td></tr>
+
+                    <tr class="table-warning">
+                        <td colspan="3">
+                            <h6 class="mb-0"><i class="fas fa-check-double me-2"></i>Duration Cross Check Information</h6>
+                        </td>
+                    </tr>
+                    <tr class="table-success">
+                        <td>Total Qty (Details)</td>
+                        <td>:</td>
+                        <td id="display_total_qty">
+                            <strong>{{ total_qty }}</strong>
+                            <small class="text-muted d-block">From welding details</small>
+                        </td>
+                    </tr>
+                    <tr class="table-success">
+                        <td>Total Duration (Details)</td>
+                        <td>:</td>
+                        <td id="display_total_hours">
+                            <strong>{{ total_hours|floatformat:2 }} hrs</strong>
+                            <small class="text-muted d-block">Calculated from all welding details</small>
+                        </td>
+                    </tr>
+                    <tr class="table-info">
+                        <td>Target Hours (Booking)</td>
+                        <td>:</td>
+                        <td>
+                            <strong>{{ booked_duration }} hrs</strong>
+                            <small class="text-muted d-block">Expected working duration</small>
+                        </td>
+                    </tr>
+                    <tr id="duration_variance_row">
+                        <td>Duration Variance</td>
+                        <td>:</td>
+                        <td id="duration_variance_content">
+                            <span id="variance_value" data-variance="{{ total_hours|floatformat:2 }}" data-booked="{{ booked_duration }}">
+                                <span class="text-muted">
+                                    <i class="fas fa-calculator me-1"></i>Calculating...
+                                </span>
+                            </span>
+                            <small class="text-muted d-block">Detail Duration vs Booked Hours comparison</small>
+                        </td>
+                    </tr>
+
+                    <tr id="time_comparison_row" class="table-light" style="display: none;">
+                        <td>Final Time Analysis</td>
+                        <td>:</td>
+                        <td id="time_comparison_content"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div id="variance_warning_section"></div>
+        </div>
+
+        <form method="post" class="card p-3">
+            {% csrf_token %}
+            <h5 class="mb-3">Data Finalisasi</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="actual_output" class="form-label">Actual Output *</label>
+                    <input type="number" step="0.01" min="0" name="actual_output" id="actual_output"
+                        class="form-control" value="{{ auto_actual_output|floatformat:2 }}" required>
+                    <small class="text-muted">Auto-calculated: <span id="auto_output_display">{{ auto_actual_output|floatformat:2 }}</span> (based on sum of output)</small>
+                </div>
+                <div class="col-md-6">
+                    <label for="actual_hours" class="form-label">Actual Hours *</label>
+                    <input type="number" step="0.01" min="0" name="actual_hours" id="actual_hours"
+                        class="form-control" value="{{ auto_actual_hours|floatformat:2 }}" required>
+                    <small class="text-muted">Auto-calculated: <span id="auto_hours_display">{{ auto_actual_hours|floatformat:2 }}</span> (based on total hours)</small>
+                    <input type="hidden" name="force_refresh" id="force_refresh" value="false">
+                </div>
+
+                <div class="col-md-12" id="comment_default_position">
+                    <label for="comment" class="form-label">Comment</label>
+                    <textarea name="comment" id="comment" rows="3" class="form-control"
+                        placeholder="Optional comments about the welding process...">{{ header.comment|default:'' }}</textarea>
+                </div>
+            </div>
+
+            <div id="reason_stop_section" class="mt-4 border-top pt-4" style="display: none;">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Reason Stop Time Required</h6>
+                    <p class="mb-0">Terdapat <strong><span id="remaining_time_display">0</span> jam</strong> yang harus dijelaskan melalui reason stop time di bawah.</p>
+                </div>
+
+                <h5 class="mb-3">Reason Stop Time</h5>
+
+                <!-- PER BJO REASON STOPS -->
+                {% if bjos_data %}
+                <div class="card mb-3 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Per BJO Reason Stops (Reject, Cutback, Change Over, Maintenance)</h6>
+                    </div>
+                    <div class="card-body">
+                        {% for bjo in bjos_data %}
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <strong>BJO: {{ bjo.bjo }}</strong> - {{ bjo.customer }} | {{ bjo.size }} | Qty: {{ bjo.qty }} joints
+                                {% if bjo.joint_numbers %}
+                                <br><small class="text-muted">Joint Numbers Processed: {{ bjo.joint_numbers|join:", " }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+
+                                    <!-- Reject -->
+                                    <div class="col-md-3">
+                                        <label for="reject_{{ bjo.id }}" class="form-label">Reject (qty)</label>
+                                        <input type="number" step="1" min="0"
+                                            name="reject_{{ bjo.id }}"
+                                            id="reject_{{ bjo.id }}"
+                                            class="form-control per-bjo-input reject-input"
+                                            value="{{ bjo.reject|default:'0' }}"
+                                            data-bjo-id="{{ bjo.id }}">
+                                        <small class="text-muted">Quantity for BJO {{ bjo.bjo }}</small>
+                                    </div>
+
+                                    <!-- Cutback -->
+                                    <div class="col-md-3">
+                                        <label for="cutback_{{ bjo.id }}" class="form-label">Cutback/Rework (qty)</label>
+                                        <input type="number" step="1" min="0"
+                                            name="cutback_{{ bjo.id }}"
+                                            id="cutback_{{ bjo.id }}"
+                                            class="form-control per-bjo-input"
+                                            value="{{ bjo.cutback|default:'0' }}">
+                                        <small class="text-muted">Quantity for BJO {{ bjo.bjo }}</small>
+                                    </div>
+
+                                    <!-- Change Over -->
+                                    <div class="col-md-3">
+                                        <label for="change_over_{{ bjo.id }}" class="form-label">Change Over (hrs)</label>
+                                        <input type="number" step="0.01" min="0"
+                                            name="change_over_{{ bjo.id }}"
+                                            id="change_over_{{ bjo.id }}"
+                                            class="form-control reason-input per-bjo-reason"
+                                            value="{{ bjo.change_over|default:'0' }}"
+                                            data-bjo-id="{{ bjo.id }}">
+                                        <small class="text-muted">Hours for BJO {{ bjo.bjo }}</small>
+                                    </div>
+
+                                    <!-- BJO Total display -->
+                                    <div class="col-md-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div class="alert alert-secondary p-2 mb-0">
+                                            <small>
+                                                <strong>BJO Total:</strong>
+                                                <span id="bjo_total_{{ bjo.id }}">0.00</span> hrs
+                                                <span class="text-muted d-block">(CO + Maintenance)</span>
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Rejected Joint Numbers -->
+                                    <div class="col-md-12 rejected-joints-container" id="rejected_joints_container_{{ bjo.id }}" style="display: none;">
+                                        <div class="alert alert-warning">
+                                            <label for="rejected_joints_{{ bjo.id }}" class="form-label">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                <strong>Which Joint Numbers are Rejected?</strong>
+                                            </label>
+                                            <input type="text"
+                                                name="rejected_joints_{{ bjo.id }}"
+                                                id="rejected_joints_{{ bjo.id }}"
+                                                class="form-control"
+                                                placeholder="Enter joint numbers separated by comma (e.g., 1,3,5)"
+                                                data-bjo-id="{{ bjo.id }}">
+                                            <small class="text-muted d-block mt-2">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Available joints: <strong>{{ bjo.joint_numbers|join:", " }}</strong><br>
+                                                Enter <span id="reject_count_{{ bjo.id }}" class="fw-bold">0</span> joint number(s) that were rejected (comma-separated)
+                                            </small>
+                                            <div id="rejected_joints_validation_{{ bjo.id }}" class="mt-2" style="display: none;"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Change Over Comment -->
+                                    <div class="col-md-12">
+                                        <label for="change_over_comment_{{ bjo.id }}" class="form-label">Change Over Comment for BJO {{ bjo.bjo }}</label>
+                                        <textarea name="change_over_comment_{{ bjo.id }}"
+                                            id="change_over_comment_{{ bjo.id }}"
+                                            rows="2" class="form-control"
+                                            placeholder="Describe change over activity for this BJO...">{{ bjo.change_over_comment|default:'' }}</textarea>
+                                    </div>
+
+                                    <!-- Maintenance/Breakdown per BJO -->
+                                    <div class="col-md-12">
+                                        <div class="border-top pt-3 mt-1">
+                                            <label class="form-label fw-semibold">
+                                                <i class="fas fa-tools me-1 text-danger"></i>
+                                                Maintenance/Breakdown — BJO {{ bjo.bjo }}
+                                            </label>
+                                            <div class="row g-2">
+                                                <div class="col-md-4">
+                                                    <label for="maint_duration_{{ bjo.id }}" class="form-label">Duration (hrs)</label>
+                                                    <input type="number" step="0.01" min="0"
+                                                        name="maint_duration_{{ bjo.id }}"
+                                                        id="maint_duration_{{ bjo.id }}"
+                                                        class="form-control reason-input per-bjo-reason maint-input"
+                                                        value="{{ bjo.maint_duration|default:'0' }}"
+                                                        data-bjo-id="{{ bjo.id }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="maint_cost_{{ bjo.id }}" class="form-label">Cost (USD)</label>
+                                                    <input type="number" step="0.01" min="0"
+                                                        name="maint_cost_{{ bjo.id }}"
+                                                        id="maint_cost_{{ bjo.id }}"
+                                                        class="form-control"
+                                                        value="{{ bjo.maint_cost|default:'0' }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">&nbsp;</label>
+                                                    <div class="text-muted small pt-2">
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        Leave 0 if no breakdown occurred
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label for="maint_issue_{{ bjo.id }}" class="form-label">Issue Description</label>
+                                                    <textarea name="maint_issue_{{ bjo.id }}"
+                                                        id="maint_issue_{{ bjo.id }}"
+                                                        rows="2" class="form-control"
+                                                        placeholder="Describe the breakdown/maintenance issue for BJO {{ bjo.bjo }}...">{{ bjo.maint_issue|default:'' }}</textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- END Maintenance per BJO -->
+
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <div class="alert alert-info mt-3">
+                            <strong>Total Per BJO Time: <span id="total_per_bjo">0.00</span> hours</strong>
+                            <small class="text-muted d-block">Sum of all Change Over + Maintenance time from all BJOs above</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SHARED REASON STOPS (tanpa maintenance) -->
+                <div class="card mb-3 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-share-alt me-2"></i>Shared Reason Stops (All BJOs)</h6>
+                        <small>These apply to the entire shift, not specific to any BJO</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="waiting_materials_shared" class="form-label">Waiting Materials (hrs)</label>
+                                <input type="number" step="0.01" min="0"
+                                    name="waiting_materials_shared"
+                                    id="waiting_materials_shared"
+                                    class="form-control reason-input shared-reason"
+                                    value="{{ existing_shared_reason_stop.waiting_materials|default:'0' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="meeting_shared" class="form-label">Meeting (hrs)</label>
+                                <input type="number" step="0.01" min="0"
+                                    name="meeting_shared"
+                                    id="meeting_shared"
+                                    class="form-control reason-input shared-reason"
+                                    value="{{ existing_shared_reason_stop.meeting|default:'0' }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="others_shared" class="form-label">Others (hrs)</label>
+                                <input type="number" step="0.01"
+                                    name="others_shared"
+                                    id="others_shared"
+                                    class="form-control reason-input shared-reason"
+                                    value="{{ existing_shared_reason_stop.others|default:'0' }}">
+                            </div>
+                            <div class="col-md-12">
+                                <div class="alert alert-secondary p-2 mb-0">
+                                    <small><strong>Shared Total:</strong> <span id="total_shared">0.00</span> hrs</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOTAL SUMMARY -->
+                <div class="mt-3">
+                    <div class="alert alert-warning">
+                        <h6 class="mb-2"><i class="fas fa-calculator me-2"></i>Total Calculation Summary</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Total Per BJO Time:</strong> <span id="display_per_bjo">0.00</span> hours
+                                <small class="text-muted d-block">Change Over + Maintenance per BJO</small>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Total Shared Time:</strong> <span id="display_shared">0.00</span> hours
+                                <small class="text-muted d-block">From shared reason stops</small>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>GRAND TOTAL:</strong> <span id="total_reason">0.00</span> hours
+                                <small class="text-muted d-block">Per BJO + Shared</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="mt-2">
+                            <strong>Waktu yang HARUS dijelaskan: <span id="target_time_display">0</span> jam</strong>
+                            <br>
+                            <small id="time_validation" class="text-muted"><strong>HARUS PAS!</strong> Grand total harus sama dengan sisa waktu.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 border-top pt-3" id="comment_bottom_position" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label for="comment_bottom" class="form-label">Comment</label>
+                            <textarea name="comment_bottom" id="comment_bottom" rows="3" class="form-control"
+                                placeholder="Additional comments about reason stops or other important notes...">{{ header.comment|default:'' }}</textarea>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Tambahkan komentar mengenai reason stop atau hal lain yang perlu dicatat.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-end">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Catatan:</strong> Data consumable dapat diinput/diupdate di halaman detail sebelum finalisasi.
+                    <a href="{% url 'weld_detail' header.id %}" class="btn btn-link btn-sm p-0 ms-2">
+                        <i class="fas fa-arrow-left me-1"></i> Kembali ke Detail
+                    </a>
+                </div>
+
+                <button type="button" id="refresh_values" class="btn btn-outline-info me-2">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh Auto Values
+                </button>
+
+                <button type="submit" class="btn btn-success text-uppercase" id="submit_finalisasi">
+                    <i class="fas fa-check me-1"></i> Simpan Finalisasi
+                </button>
+            </div>
+        </form>
+
+        <script>
+        // BJO Data dari Django untuk JavaScript
+        const bjosData = [
+            {% for bjo in bjos_data %}
+            {
+                id: {{ bjo.id }},
+                jointNumbers: [{% for jn in bjo.joint_numbers %}'{{ jn }}'{% if not forloop.last %},{% endif %}{% endfor %}]
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const actualOutputInput = document.getElementById('actual_output');
+            const actualHoursInput = document.getElementById('actual_hours');
+            const refreshButton = document.getElementById('refresh_values');
+            const submitButton = document.getElementById('submit_finalisasi');
+            const forceRefreshField = document.getElementById('force_refresh');
+            const timeComparisonRow = document.getElementById('time_comparison_row');
+            const timeComparisonContent = document.getElementById('time_comparison_content');
+            const reasonStopSection = document.getElementById('reason_stop_section');
+            const remainingTimeDisplay = document.getElementById('remaining_time_display');
+            const targetTimeDisplay = document.getElementById('target_time_display');
+
+            const autoOutputDisplay = document.getElementById('auto_output_display');
+            const autoHoursDisplay = document.getElementById('auto_hours_display');
+            const displayTotalQty = document.getElementById('display_total_qty');
+            const displayTotalHours = document.getElementById('display_total_hours');
+
+            const commentDefaultPosition = document.getElementById('comment_default_position');
+            const commentBottomPosition = document.getElementById('comment_bottom_position');
+            const commentDefault = document.getElementById('comment');
+            const commentBottom = document.getElementById('comment_bottom');
+
+            const bookedDuration = {{ booked_duration|floatformat:2 }};
+            const detailTotalHours = {{ total_hours|floatformat:2 }};
+
+            let currentAutoActualOutput = {{ auto_actual_output|floatformat:2 }};
+            let currentAutoActualHours = {{ auto_actual_hours|floatformat:2 }};
+
+            const overtimeTolerance = 0.5;
+            const minuteTolerance = 0.0167;
+
+            let currentTimeDifference = 0;
+            let isReasonStopVisible = false;
+            let isOvertimeMode = false;
+
+            const totalReasonSpan = document.getElementById('total_reason');
+            const timeValidation = document.getElementById('time_validation');
+            const totalPerBjoSpan = document.getElementById('total_per_bjo');
+            const totalSharedSpan = document.getElementById('total_shared');
+            const displayPerBjoSpan = document.getElementById('display_per_bjo');
+            const displaySharedSpan = document.getElementById('display_shared');
+
+            // =============================================
+            // REJECTED JOINTS LOGIC
+            // =============================================
+
+            function toggleRejectedJointsInput(bjoId, rejectQty) {
+                const container = document.getElementById(`rejected_joints_container_${bjoId}`);
+                const rejectedJointsInput = document.getElementById(`rejected_joints_${bjoId}`);
+                const rejectCountSpan = document.getElementById(`reject_count_${bjoId}`);
+
+                if (!container) return;
+
+                if (rejectQty > 0) {
+                    container.style.display = 'block';
+                    if (rejectCountSpan) rejectCountSpan.textContent = rejectQty;
+                    if (rejectedJointsInput) rejectedJointsInput.required = true;
+                } else {
+                    container.style.display = 'none';
+                    if (rejectedJointsInput) {
+                        rejectedJointsInput.value = '';
+                        rejectedJointsInput.required = false;
+                    }
+                }
+            }
+
+            function validateRejectedJoints(bjoId) {
+                const rejectInput = document.getElementById(`reject_${bjoId}`);
+                const rejectedJointsInput = document.getElementById(`rejected_joints_${bjoId}`);
+                const validationDiv = document.getElementById(`rejected_joints_validation_${bjoId}`);
+
+                if (!rejectInput || !rejectedJointsInput || !validationDiv) return true;
+
+                const rejectQty = parseInt(rejectInput.value) || 0;
+
+                if (rejectQty === 0) {
+                    validationDiv.style.display = 'none';
+                    return true;
+                }
+
+                const rejectedJointsStr = rejectedJointsInput.value.trim();
+
+                if (!rejectedJointsStr) {
+                    validationDiv.innerHTML = '<div class="alert alert-danger p-2 mb-0"><small><i class="fas fa-times me-1"></i>Please enter which joint numbers are rejected!</small></div>';
+                    validationDiv.style.display = 'block';
+                    return false;
+                }
+
+                const rejectedJoints = rejectedJointsStr.split(',').map(j => j.trim()).filter(j => j);
+
+                if (rejectedJoints.length !== rejectQty) {
+                    validationDiv.innerHTML = `<div class="alert alert-danger p-2 mb-0"><small><i class="fas fa-times me-1"></i>Count mismatch! You entered ${rejectQty} reject(s) but specified ${rejectedJoints.length} joint number(s).</small></div>`;
+                    validationDiv.style.display = 'block';
+                    return false;
+                }
+
+                const bjoData = bjosData.find(b => b.id == bjoId);
+                if (bjoData) {
+                    const invalidJoints = rejectedJoints.filter(j => !bjoData.jointNumbers.includes(j));
+                    if (invalidJoints.length > 0) {
+                        validationDiv.innerHTML = `<div class="alert alert-danger p-2 mb-0"><small><i class="fas fa-times me-1"></i>Invalid joint number(s): ${invalidJoints.join(', ')}. Available joints: ${bjoData.jointNumbers.join(', ')}</small></div>`;
+                        validationDiv.style.display = 'block';
+                        return false;
+                    }
+
+                    const uniqueJoints = [...new Set(rejectedJoints)];
+                    if (uniqueJoints.length !== rejectedJoints.length) {
+                        validationDiv.innerHTML = '<div class="alert alert-danger p-2 mb-0"><small><i class="fas fa-times me-1"></i>Duplicate joint numbers detected! Each joint should only be listed once.</small></div>';
+                        validationDiv.style.display = 'block';
+                        return false;
+                    }
+                }
+
+                validationDiv.innerHTML = `<div class="alert alert-success p-2 mb-0"><small><i class="fas fa-check me-1"></i>Valid! ${rejectedJoints.length} joint(s) will be marked as rejected: ${rejectedJoints.join(', ')}</small></div>`;
+                validationDiv.style.display = 'block';
+                return true;
+            }
+
+            document.querySelectorAll('.reject-input').forEach(function(input) {
+                const bjoId = input.dataset.bjoId;
+                input.addEventListener('input', function() {
+                    const rejectQty = parseInt(this.value) || 0;
+                    toggleRejectedJointsInput(bjoId, rejectQty);
+                });
+                const initialRejectQty = parseInt(input.value) || 0;
+                toggleRejectedJointsInput(bjoId, initialRejectQty);
+            });
+
+            document.querySelectorAll('[id^="rejected_joints_"]').forEach(function(input) {
+                const bjoId = input.dataset.bjoId;
+                input.addEventListener('blur', function() { validateRejectedJoints(bjoId); });
+                input.addEventListener('input', function() {
+                    setTimeout(() => validateRejectedJoints(bjoId), 500);
+                });
+            });
+
+            // =============================================
+            // DISPLAY / VARIANCE
+            // =============================================
+
+            function updateDisplayValues() {
+                if (autoOutputDisplay) autoOutputDisplay.textContent = currentAutoActualOutput.toFixed(2);
+                if (autoHoursDisplay) autoHoursDisplay.textContent = currentAutoActualHours.toFixed(2);
+                if (displayTotalQty) displayTotalQty.innerHTML = `<strong>${currentAutoActualOutput.toFixed(2)}</strong><small class="text-muted d-block">From welding details</small>`;
+                if (displayTotalHours) displayTotalHours.innerHTML = `<strong>${currentAutoActualHours.toFixed(2)} hrs</strong><small class="text-muted d-block">Calculated from all welding details</small>`;
+                updateDurationVarianceDisplay();
+            }
+
+            function updateDurationVarianceDisplay() {
+                const variance = detailTotalHours - bookedDuration;
+                const varianceElement = document.getElementById('variance_value');
+                const warningSection = document.getElementById('variance_warning_section');
+
+                let varianceHTML = '';
+                let warningHTML = '';
+
+                if (Math.abs(variance) < 0.01) {
+                    varianceHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>Perfect Match</span>`;
+                } else if (variance > 0) {
+                    varianceHTML = `<span class="text-danger"><i class="fas fa-arrow-up me-1"></i>+${variance.toFixed(2)} hrs (Over time from details)</span>`;
+                } else {
+                    varianceHTML = `<span class="text-warning"><i class="fas fa-arrow-down me-1"></i>${variance.toFixed(2)} hrs (Under time from details)</span>`;
+                }
+                varianceHTML += '<small class="text-muted d-block">Detail Duration vs Booked Hours comparison</small>';
+
+                if (varianceElement) varianceElement.innerHTML = varianceHTML;
+
+                if (Math.abs(variance) > 1) {
+                    warningHTML = `
+                        <div class="alert alert-warning mt-3">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Significant Duration Variance Detected</h6>
+                            <p class="mb-2">
+                                Ada perbedaan signifikan <strong>${Math.abs(variance).toFixed(2)} jam</strong> antara total duration dari welding details
+                                dengan booked hours. Mohon periksa kembali data sebelum melakukan finalisasi.
+                            </p>
+                            <div class="row">
+                                <div class="col-md-4"><small><strong>Detail Duration:</strong> ${detailTotalHours.toFixed(2)} hrs</small></div>
+                                <div class="col-md-4"><small><strong>Booked Hours:</strong> ${bookedDuration.toFixed(2)} hrs</small></div>
+                                <div class="col-md-4"><small><strong>Difference:</strong> ${variance.toFixed(2)} hrs</small></div>
+                            </div>
+                            <div class="mt-2">
+                                <a href="{% url 'weld_detail' header.id %}" class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-eye me-1"></i> Check Welding Details
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                } else if (Math.abs(variance) > 0.5) {
+                    warningHTML = `
+                        <div class="alert alert-info mt-3">
+                            <h6><i class="fas fa-info-circle me-2"></i>Duration Variance Information</h6>
+                            <p class="mb-0">
+                                Ada perbedaan <strong>${Math.abs(variance).toFixed(2)} jam</strong> antara detail duration dengan booked hours.
+                                Pastikan hal ini sesuai dengan kondisi actual di lapangan.
+                            </p>
+                        </div>
+                    `;
+                }
+
+                if (warningSection) warningSection.innerHTML = warningHTML;
+            }
+
+            // =============================================
+            // REFRESH AUTO VALUES
+            // =============================================
+
+            function refreshAutoValues() {
+                actualOutputInput.value = currentAutoActualOutput.toFixed(2);
+                actualHoursInput.value = currentAutoActualHours.toFixed(2);
+                forceRefreshField.value = 'true';
+                updateDisplayValues();
+                updateTimeComparison();
+
+                actualOutputInput.style.backgroundColor = '#d4edda';
+                actualHoursInput.style.backgroundColor = '#d4edda';
+                setTimeout(() => {
+                    actualOutputInput.style.backgroundColor = '';
+                    actualHoursInput.style.backgroundColor = '';
+                    forceRefreshField.value = 'false';
+                }, 1000);
+            }
+
+            // =============================================
+            // COMMENT SYNC
+            // =============================================
+
+            function syncCommentFields() {
+                if (isReasonStopVisible) {
+                    commentBottom.value = commentDefault.value;
+                } else {
+                    commentDefault.value = commentBottom.value;
+                }
+            }
+
+            function toggleCommentPosition() {
+                if (isReasonStopVisible) {
+                    syncCommentFields();
+                    commentDefaultPosition.style.display = 'none';
+                    commentBottomPosition.style.display = 'block';
+                    commentDefault.disabled = true;
+                    commentBottom.disabled = false;
+                    commentBottom.name = 'comment';
+                    commentDefault.name = '';
+                } else {
+                    syncCommentFields();
+                    commentDefaultPosition.style.display = 'block';
+                    commentBottomPosition.style.display = 'none';
+                    commentDefault.disabled = false;
+                    commentBottom.disabled = true;
+                    commentDefault.name = 'comment';
+                    commentBottom.name = '';
+                }
+            }
+
+            // =============================================
+            // REASON STOP ALERT TEXT
+            // =============================================
+
+            function updateReasonStopAlert() {
+                const reasonStopAlert = reasonStopSection.querySelector('.alert-info');
+                if (reasonStopAlert && isReasonStopVisible) {
+                    const timeAmount = Math.abs(currentTimeDifference).toFixed(2);
+                    const explanation = isOvertimeMode
+                        ? 'overtime yang harus dijelaskan (mis. maintenance, meeting, waiting materials, dll.)'
+                        : 'sisa waktu yang harus dijelaskan melalui reason stop time di bawah';
+
+                    reasonStopAlert.innerHTML = `
+                        <h6><i class="fas fa-info-circle me-2"></i>Reason Stop Time Required</h6>
+                        <p class="mb-0">Terdapat <strong>${timeAmount} jam</strong> ${explanation}.</p>
+                    `;
+                }
+            }
+
+            // =============================================
+            // TIME COMPARISON
+            // =============================================
+
+            function updateTimeComparison() {
+                const actualHours = parseFloat(actualHoursInput.value) || 0;
+                currentTimeDifference = bookedDuration - actualHours;
+
+                if (actualHours > 0) {
+                    timeComparisonRow.style.display = '';
+
+                    if (Math.abs(currentTimeDifference) <= minuteTolerance) {
+                        // Perfect match
+                        timeComparisonRow.className = 'table-success';
+                        timeComparisonContent.innerHTML = `
+                            <strong><i class="fas fa-check-circle me-1"></i>Waktu Sesuai Target</strong>
+                            <small class="text-success d-block">Actual hours pas dengan booked hours (${bookedDuration} jam)</small>
+                        `;
+                        reasonStopSection.style.display = 'none';
+                        isReasonStopVisible = false;
+                        isOvertimeMode = false;
+
+                    } else if (currentTimeDifference > minuteTolerance) {
+                        // Undertime — sisa waktu harus dijelaskan
+                        timeComparisonRow.className = 'table-warning';
+                        timeComparisonContent.innerHTML = `
+                            <strong><i class="fas fa-exclamation-triangle me-1"></i>Sisa Waktu: ${currentTimeDifference.toFixed(2)} jam</strong>
+                            <small class="text-warning d-block">Waktu harus dijelaskan melalui reason stops</small>
+                        `;
+                        reasonStopSection.style.display = 'block';
+                        if (remainingTimeDisplay) remainingTimeDisplay.textContent = currentTimeDifference.toFixed(2);
+                        if (targetTimeDisplay) targetTimeDisplay.textContent = currentTimeDifference.toFixed(2);
+                        isReasonStopVisible = true;
+                        isOvertimeMode = false;
+
+                    } else if (currentTimeDifference >= -overtimeTolerance && currentTimeDifference < -minuteTolerance) {
+                        // Overtime dalam toleransi ≤ 30 menit
+                        const overtimeAmount = Math.abs(currentTimeDifference);
+                        timeComparisonRow.className = 'table-info';
+                        timeComparisonContent.innerHTML = `
+                            <strong><i class="fas fa-clock me-1"></i>Kelebihan Waktu: ${overtimeAmount.toFixed(2)} jam (dalam toleransi)</strong>
+                            <small class="text-info d-block">Kelebihan ≤ 30 menit akan disesuaikan otomatis ke booked hours saat disimpan</small>
+                        `;
+                        reasonStopSection.style.display = 'none';
+                        isReasonStopVisible = false;
+                        isOvertimeMode = false;
+
+                    } else {
+                        // Overtime melebihi toleransi — harus dijelaskan
+                        const overtimeAmount = Math.abs(currentTimeDifference);
+                        timeComparisonRow.className = 'table-danger';
+                        timeComparisonContent.innerHTML = `
+                            <strong><i class="fas fa-clock me-1"></i>Overtime: ${overtimeAmount.toFixed(2)} jam</strong>
+                            <small class="text-danger d-block">Overtime harus dijelaskan melalui reason stops (maintenance, meeting, waiting materials, dll.)</small>
+                        `;
+                        reasonStopSection.style.display = 'block';
+                        if (remainingTimeDisplay) remainingTimeDisplay.textContent = overtimeAmount.toFixed(2);
+                        if (targetTimeDisplay) targetTimeDisplay.textContent = overtimeAmount.toFixed(2);
+                        isReasonStopVisible = true;
+                        isOvertimeMode = true;
+                    }
+
+                    updateReasonStopAlert();
+
+                } else {
+                    timeComparisonRow.style.display = 'none';
+                    reasonStopSection.style.display = 'none';
+                    isReasonStopVisible = false;
+                    isOvertimeMode = false;
+                }
+
+                toggleCommentPosition();
+                calculateTotal();
+            }
+
+            // =============================================
+            // CALCULATE TOTAL — CO + Maintenance per BJO
+            // =============================================
+
+            function calculateTotal() {
+                if (Math.abs(currentTimeDifference) <= minuteTolerance) return;
+
+                let totalPerBjo = 0;
+
+                // Hitung semua per-bjo-reason (change_over + maint_duration)
+                document.querySelectorAll('.per-bjo-reason').forEach(function(input) {
+                    totalPerBjo += parseFloat(input.value) || 0;
+                });
+
+                // Update display BJO total per card = change_over + maint_duration
+                bjosData.forEach(function(bjo) {
+                    const changeOverInput = document.getElementById('change_over_' + bjo.id);
+                    const maintInput = document.getElementById('maint_duration_' + bjo.id);
+                    const bjoTotalSpan = document.getElementById('bjo_total_' + bjo.id);
+
+                    const changeOverVal = parseFloat(changeOverInput ? changeOverInput.value : 0) || 0;
+                    const maintVal = parseFloat(maintInput ? maintInput.value : 0) || 0;
+
+                    if (bjoTotalSpan) {
+                        bjoTotalSpan.textContent = (changeOverVal + maintVal).toFixed(2);
+                    }
+                });
+
+                // Shared total
+                let totalShared = 0;
+                document.querySelectorAll('.shared-reason').forEach(function(input) {
+                    totalShared += parseFloat(input.value) || 0;
+                });
+
+                const grandTotal = totalPerBjo + totalShared;
+
+                if (totalPerBjoSpan) totalPerBjoSpan.textContent = totalPerBjo.toFixed(2);
+                if (totalSharedSpan) totalSharedSpan.textContent = totalShared.toFixed(2);
+                if (displayPerBjoSpan) displayPerBjoSpan.textContent = totalPerBjo.toFixed(2);
+                if (displaySharedSpan) displaySharedSpan.textContent = totalShared.toFixed(2);
+                if (totalReasonSpan) totalReasonSpan.textContent = grandTotal.toFixed(2);
+
+                if (timeValidation) {
+                    const targetTime = Math.abs(currentTimeDifference);
+                    const difference = Math.abs(grandTotal - targetTime);
+                    const reasonType = isOvertimeMode ? 'overtime' : 'sisa waktu';
+
+                    if (difference <= minuteTolerance) {
+                        timeValidation.innerHTML = `<strong class="text-success"><i class="fas fa-check me-1"></i>Total waktu sudah pas dengan ${reasonType}!</strong>`;
+                    } else if (grandTotal < targetTime) {
+                        timeValidation.innerHTML = `<strong class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Masih kurang ${(targetTime - grandTotal).toFixed(2)} jam untuk menjelaskan ${reasonType} - harus pas!</strong>`;
+                    } else {
+                        timeValidation.innerHTML = `<strong class="text-danger"><i class="fas fa-times me-1"></i>Kelebihan ${(grandTotal - targetTime).toFixed(2)} jam - total harus pas dengan ${reasonType}!</strong>`;
+                    }
+                }
+
+                const summaryBox = document.querySelector('.alert-warning');
+                if (summaryBox && isReasonStopVisible) {
+                    const targetTime = Math.abs(currentTimeDifference);
+                    const reasonTypeText = isOvertimeMode ? 'overtime' : 'sisa waktu';
+                    const lastDiv = summaryBox.querySelector('.mt-2');
+                    if (lastDiv) {
+                        lastDiv.innerHTML = `
+                            <strong>${reasonTypeText.charAt(0).toUpperCase() + reasonTypeText.slice(1)} yang HARUS dijelaskan: <span id="target_time_display">${targetTime.toFixed(2)}</span> jam</strong>
+                            <br>
+                            <small id="time_validation" class="text-muted"><strong>HARUS PAS!</strong> Grand total harus sama dengan ${reasonTypeText}.</small>
+                        `;
+                    }
+                }
+            }
+
+            // =============================================
+            // VALIDATE BEFORE SUBMIT
+            // =============================================
+
+            function validateBeforeSubmit(e) {
+                const variance = Math.abs(detailTotalHours - bookedDuration);
+
+                if (variance > 2) {
+                    const confirmMessage = `PERINGATAN: Ada perbedaan besar ${variance.toFixed(2)} jam antara detail duration (${detailTotalHours.toFixed(2)} hrs) dengan booked hours (${bookedDuration} hrs).\n\nApakah Anda yakin data sudah benar dan ingin melanjutkan finalisasi?`;
+                    if (!confirm(confirmMessage)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+
+                if (isReasonStopVisible) {
+                    let totalPerBjo = 0;
+                    document.querySelectorAll('.per-bjo-reason').forEach(function(input) {
+                        totalPerBjo += parseFloat(input.value) || 0;
+                    });
+
+                    let totalShared = 0;
+                    document.querySelectorAll('.shared-reason').forEach(function(input) {
+                        totalShared += parseFloat(input.value) || 0;
+                    });
+
+                    const grandTotal = totalPerBjo + totalShared;
+                    const targetTime = Math.abs(currentTimeDifference);
+                    const difference = Math.abs(grandTotal - targetTime);
+
+                    if (difference > minuteTolerance) {
+                        const reasonType = isOvertimeMode ? 'overtime' : 'sisa waktu';
+                        alert(`ERROR: Total reason stop time (${grandTotal.toFixed(2)} jam) TIDAK SESUAI dengan ${reasonType} (${targetTime.toFixed(2)} jam).\n\nSelisih: ${difference.toFixed(2)} jam\n\nSilakan sesuaikan nilai reason stop sebelum menyimpan.`);
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            // =============================================
+            // EVENT LISTENERS
+            // =============================================
+
+            if (actualHoursInput) actualHoursInput.addEventListener('input', updateTimeComparison);
+            if (refreshButton) refreshButton.addEventListener('click', refreshAutoValues);
+            if (submitButton) submitButton.addEventListener('click', validateBeforeSubmit);
+
+            if (commentDefault) {
+                commentDefault.addEventListener('input', function() {
+                    if (!isReasonStopVisible) commentBottom.value = commentDefault.value;
+                });
+            }
+            if (commentBottom) {
+                commentBottom.addEventListener('input', function() {
+                    if (isReasonStopVisible) commentDefault.value = commentBottom.value;
+                });
+            }
+
+            document.querySelectorAll('.reason-input').forEach(function(input) {
+                input.addEventListener('input', calculateTotal);
+            });
+
+            // =============================================
+            // INIT
+            // =============================================
+
+            updateDisplayValues();
+            updateTimeComparison();
+        });
+        </script>
+    {% else %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Data welding header tidak ditemukan.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

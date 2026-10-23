@@ -1,0 +1,24 @@
+{% extends 'base_report.html' %}
+
+{% block content %}
+    {% load static %}
+    
+    <h2>📅 Laporan OEE Mingguan</h2>
+    <table border="1">
+    <tr><th>Tanggal</th><th>Mesin</th><th>Shift</th><th>Operator</th><th>OEE (%)</th></tr>
+    {% for entry in weekly_report %}
+        <tr>
+        <td>{{ entry.date }}</td>
+        <td>{{ entry.machine }}</td>
+        <td>{{ entry.shift }}</td>
+        <td>{{ entry.operator }}</td>
+        <td>{{ entry.oee }}</td>
+        </tr>
+    {% endfor %}
+    </table>
+
+    <h2>📆 Laporan OEE Bulanan</h2>
+    <!-- Bisa pakai format table yang sama -->
+
+
+{% endblock %}

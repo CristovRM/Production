@@ -1,0 +1,14 @@
+{
+  "name": "theme",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0"
+  },
+  "scripts": {
+    "build": "npx tailwindcss -i ./static_src/input.css -o ./static/css/styles.css",
+    "watch": "npx tailwindcss -i ./static_src/input.css -o ./static/css/styles.css --watch"
+  }
+}

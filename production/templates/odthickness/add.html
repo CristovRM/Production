@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Tambah OD Thickness</h2>
+
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">OD</label>
+                <input type="number" step="0.001" name="od" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Wall</label>
+                <input type="number" step="0.001" name="wall" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Size</label>
+                <input type="text" name="size" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Tipe Proses</label>
+                <select name="process_type" class="form-control">
+                    <option value="">-- Pilih Tipe Proses --</option>
+                    {% for p in processes %}
+                        <option value="{{ p.id }}">{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-primary">Simpan</button>
+            <a href="{% url 'odthickness_list' %}" class="btn btn-secondary">Kembali</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

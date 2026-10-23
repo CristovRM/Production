@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% block title %}PINs protector list{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <!-- Django Messages Display -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-hide-alert" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <h2 class="mb-4">Daftar PIN Protector</h2>
+
+    <!-- Tombol Cetak PDF, Generate, Manual -->
+    <div class="d-flex justify-content-end flex-wrap mb-3 gap-2">
+        <a href="{% url 'pinprotector_pdf' %}?q={{ query }}&bjo={{ filter_bjo }}&threaded={{ filter_threaded }}&beveled={{ filter_beveled }}"
+           class="btn btn-danger text-white"
+           target="_blank">
+            <i class="fas fa-file-pdf me-1"></i> Cetak PDF
+        </a>
+        <a href="{% url 'manual_add_pin_protector' %}" class="btn btn-secondary">
+            <i class="fas fa-pencil-alt me-1"></i> Input Manual
+        </a>
+        <a href="{% url 'pinprotector_generate' %}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Generate Baru
+        </a>
+    </div>
+
+    <!-- Filter & Search -->
+    <form method="get" class="card p-3 mb-3">
+        <div class="row g-3">
+            <div class="col-12 col-md-2">
+                <label class="form-label">Pencarian</label>
+                <input type="text" name="q" class="form-control" placeholder="Cari Serial Number atau Customer..." value="{{ query }}">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Filter BJO <small class="text-muted">(type to search)</small></label>
+                <select name="bjo" id="bjoSelect" class="form-select">
+                    <option value="">-- Semua BJO --</option>
+                    {% for b in bjo_list %}
+                        <option value="{{ b.id }}" {% if b.id|stringformat:"s" == filter_bjo %}selected{% endif %}>
+                            {{ b.bjo }} - {{ b.customer }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Filter Threaded</label>
+                <select name="threaded" class="form-select">
+                    <option value="">-- Semua Status --</option>
+                    <option value="false" {% if filter_threaded == 'false' %}selected{% endif %}>Belum</option>
+                    <option value="true" {% if filter_threaded == 'true' %}selected{% endif %}>Sudah</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Filter Beveled</label>
+                <select name="beveled" class="form-select">
+                    <option value="">-- Semua Status --</option>
+                    <option value="false" {% if filter_beveled == 'false' %}selected{% endif %}>Belum</option>
+                    <option value="true" {% if filter_beveled == 'true' %}selected{% endif %}>Sudah</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-1">
+                <label class="form-label">Per Page</label>
+                <select name="per_page" class="form-select">
+                    <option value="10" {% if per_page == '10' %}selected{% endif %}>10</option>
+                    <option value="100" {% if per_page == '100' %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex flex-wrap align-items-end gap-2">
+                <button type="submit" class="btn btn-primary w-100 w-md-auto">Filter</button>
+                <a href="{% url 'pinprotector_list' %}" class="btn btn-warning w-100 w-md-auto text-dark">Reset</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- ============ TOTAL COUNTS SUMMARY ============ -->
+    <div class="mb-3 p-3 border rounded" style="background-color: #f8f9fa;">
+        <div class="row text-center g-2">
+            <div class="col-12 mb-2">
+                <strong style="font-size: 1.1rem; color: #495057;">
+                    📊 TOTAL SUMMARY ({{ total_filtered }} protectors)
+                </strong>
+            </div>
+            
+            <!-- Threaded -->
+            <div class="col-6 col-md-2">
+                <div class="card border-success" style="background-color: #d4edda;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Threaded</small>
+                        <strong class="text-success" style="font-size: 1.3rem;">{{ status_counts.threaded }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Beveled -->
+            <div class="col-6 col-md-2">
+                <div class="card border-primary" style="background-color: #d1ecf1;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Beveled</small>
+                        <strong class="text-primary" style="font-size: 1.3rem;">{{ status_counts.beveled }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Phosphated (is_used) -->
+            <div class="col-6 col-md-2">
+                <div class="card border-info" style="background-color: #cce8f4;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">Phosphated</small>
+                        <strong class="text-info" style="font-size: 1.3rem;">{{ status_counts.phosphated }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- NCR -->
+            <div class="col-6 col-md-2">
+                <div class="card border-danger" style="background-color: #f8d7da;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">NCR</small>
+                        <strong class="text-danger" style="font-size: 1.3rem;">{{ status_counts.ncr }}</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RWK -->
+            <div class="col-6 col-md-2">
+                <div class="card border-warning" style="background-color: #fff3cd;">
+                    <div class="card-body p-2">
+                        <small class="d-block text-muted">RWK</small>
+                        <strong class="text-warning" style="font-size: 1.3rem;">{{ status_counts.rwk }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabel -->
+    <div class="card p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Serial Number</th>
+                        <th>Info BJO</th>
+                        <th>Threaded</th>
+                        <th>Beveled</th>
+                        <th>Phosphated</th>
+                        <th>NCR</th>
+                        <th>RWK</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ forloop.counter0|add:items.start_index }}</td>
+                        <td><span class="fw-bold">{{ item.serial_number }}</span></td>
+                        <td class="text-start">
+                            {% if item.bjo %}
+                                <strong>bjo:</strong> {{ item.bjo.bjo }} |
+                                <strong>customer:</strong> {{ item.bjo.customer }} |
+                                {{ item.bjo.process_type.name }} {{ item.bjo.size.od }} x {{ item.bjo.size.thickness }} |
+                                {% if item.bjo.process_code %}
+                                    {{ item.bjo.process_code.code }}
+                                {% elif item.bjo.bp %}
+                                    {{ item.bjo.bp }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                                |
+                                <strong>qty:</strong> {{ item.bjo.qty|floatformat:2 }} joints
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="{% if item.is_threaded %}text-success{% else %}text-danger{% endif %}"
+                                  title="{% if item.is_threaded %}Sudah di-thread{% else %}Belum di-thread{% endif %}">
+                                {{ item.is_threaded|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if item.is_beveled %}text-success{% else %}text-danger{% endif %}"
+                                  title="{% if item.is_beveled %}Sudah di-bevel{% else %}Belum di-bevel{% endif %}">
+                                {{ item.is_beveled|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if item.is_used %}text-success{% else %}text-danger{% endif %}"
+                                  title="{% if item.is_used %}Sudah di-phosphate{% else %}Belum di-phosphate{% endif %}">
+                                {{ item.is_used|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if item.is_ncr %}text-danger{% else %}text-success{% endif %}"
+                                  title="{% if item.is_ncr %}NCR (Non-Conforming Report){% else %}Sesuai standar{% endif %}">
+                                {{ item.is_ncr|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if item.is_rwk %}text-warning{% else %}text-muted{% endif %}" 
+                                  title="{% if item.is_rwk %}Sudah di-rework{% else %}Belum di-rework{% endif %}">
+                                {{ item.is_rwk|yesno:"✔,✘" }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="confirmEdit('{{ item.serial_number }}', '{% url 'pinprotector_edit' item.id %}')" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="confirmDelete('{{ item.serial_number }}', '{{ item.id }}')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">Belum ada data PIN Protector.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if items.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination justify-content-center flex-wrap">
+                {% if items.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ items.previous_page_number }}&q={{ query }}&bjo={{ filter_bjo }}&threaded={{ filter_threaded }}&beveled={{ filter_beveled }}&per_page={{ per_page }}">Sebelumnya</a>
+                </li>
+                {% endif %}
+
+                {% for num in items.paginator.page_range %}
+                    {% if items.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > items.number|add:'-3' and num < items.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ query }}&bjo={{ filter_bjo }}&threaded={{ filter_threaded }}&beveled={{ filter_beveled }}&per_page={{ per_page }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if items.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ items.next_page_number }}&q={{ query }}&bjo={{ filter_bjo }}&threaded={{ filter_threaded }}&beveled={{ filter_beveled }}&per_page={{ per_page }}">Berikutnya</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Edit -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Edit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin mengedit Serial Number <strong id="serialNumberToEdit"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <a id="editConfirmButton" href="#" class="btn btn-primary">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus Serial Number <strong id="serialNumberToDelete"></strong>?</p>
+                <p class="text-danger"><small>Tindakan ini tidak dapat dibatalkan!</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Select2 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+<!-- jQuery (required for Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 2500);
+    });
+});
+
+// Initialize Select2 after jQuery is loaded
+$(document).ready(function() {
+    // Initialize Select2 on BJO dropdown
+    $('#bjoSelect').select2({
+        placeholder: '-- Semua BJO --',
+        allowClear: true,
+        width: '100%',
+        minimumResultsForSearch: 0,
+        language: {
+            noResults: function() {
+                return 'Tidak ada hasil ditemukan';
+            },
+            searching: function() {
+                return 'Mencari...';
+            }
+        }
+    });
+});
+
+// Fungsi untuk konfirmasi edit
+function confirmEdit(serialNumber, editUrl) {
+    document.getElementById('serialNumberToEdit').textContent = serialNumber;
+    document.getElementById('editConfirmButton').href = editUrl;
+    var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    editModal.show();
+}
+
+// Fungsi untuk konfirmasi delete
+function confirmDelete(serialNumber, id) {
+    document.getElementById('serialNumberToDelete').textContent = serialNumber;
+    document.getElementById('deleteForm').action = "{% url 'delete_pinprotector' 0 %}".replace('0', id);
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+
+<style>
+/* Custom alert styles */
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-error, .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info {
+    background-color: #cce8f4;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.alert.fade {
+    transition: opacity 0.5s ease-out;
+}
+
+.alert i {
+    vertical-align: middle;
+}
+
+/* Status indicators */
+.text-success {
+    color: #28a745 !important;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.text-primary {
+    color: #0d6efd !important;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.text-info {
+    color: #17a2b8 !important;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.text-muted {
+    color: #6c757d !important;
+    font-size: 1.1em;
+}
+
+.table td span[title] {
+    cursor: help;
+    transition: all 0.2s ease;
+}
+
+.table td span[title]:hover {
+    transform: scale(1.2);
+}
+
+/* Summary Cards */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-body small {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.card-body strong {
+    display: block;
+    margin-top: 5px;
+}
+
+/* Select2 Custom Styling */
+.select2-container {
+    z-index: 9999;
+}
+
+.select2-container--default .select2-selection--single {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    height: 38px;
+    padding: 0.375rem 0.75rem;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5;
+    padding-left: 0;
+    color: #212529;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+    right: 3px;
+}
+
+.select2-container--default.select2-container--open .select2-selection--single {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.select2-dropdown {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    z-index: 9999 !important;
+}
+
+.select2-results__option {
+    padding: 0.5rem 0.75rem;
+}
+
+.select2-results__option--highlighted[aria-selected] {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+
+.select2-search--dropdown {
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: block !important;
+}
+
+.select2-search--dropdown .select2-search__field {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.select2-search--dropdown .select2-search__field:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.select2-results__option[aria-selected="true"] {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem !important;
+    }
+    
+    .card-body strong {
+        font-size: 1.1rem !important;
+    }
+}
+</style>
+{% endblock %}

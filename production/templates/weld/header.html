@@ -1,0 +1,464 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Create New Welding Record</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <!-- Date -->
+            <div class="col-12 col-md-6">
+                <label for="date" class="form-label">Date *</label>
+                <input type="date" name="date" class="form-control" required>
+            </div>
+
+            <!-- Machine -->
+            <div class="col-12 col-md-6">
+                <label for="machine" class="form-label">Machine *</label>
+                <select name="machine" class="form-select" required>
+                    <option value="">-- Pilih Machine --</option>
+                    {% for item in machine_list %}
+                        <option value="{{ item.id }}">{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Shift -->
+            <div class="col-12 col-md-6">
+                <label for="shift" class="form-label">Shift *</label>
+                <select name="shift" class="form-select" required>
+                    <option value="">-- Pilih Shift --</option>
+                    {% for item in shift_list %}
+                        <option value="{{ item.id }}">{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Operator with Searchable Select -->
+            <div class="col-12 col-md-6">
+                <label for="operator" class="form-label">Operator * <small class="text-muted">(ketik untuk mencari)</small></label>
+                <div class="searchable-select" id="operator_searchable">
+                    <div class="input-wrapper">
+                        <input type="text" 
+                               id="operator_search" 
+                               class="form-control searchable-input" 
+                               placeholder="Ketik untuk mencari operator..." 
+                               autocomplete="off">
+                        <button type="button" class="clear-btn" id="clear_operator" title="Hapus pilihan">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="searchable-dropdown" id="operator_dropdown">
+                        <div class="dropdown-item" data-value="">-- Pilih Operator --</div>
+                        {% for item in operator_list %}
+                            <div class="dropdown-item" 
+                                 data-value="{{ item.id }}"
+                                 data-search="{{ item.name|lower }} {{ item.initial|lower }}">
+                                {{ item.name }} ({{ item.initial }})
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="operator" id="operator_hidden" required>
+                </div>
+                <small class="text-muted d-block mt-1">
+                    <i class="fas fa-info-circle"></i> Klik tombol ✕ atau tekan Delete untuk menghapus
+                </small>
+            </div>
+
+            <!-- Booked Hours -->
+            <div class="col-12 col-md-6">
+                <label for="booked_hours" class="form-label">Booked Hours *</label>
+                <select name="booked_hours" class="form-select" required>
+                    <option value="">-- Pilih Booking Hours --</option>
+                    {% for item in booked_hours_list %}
+                        <option value="{{ item.id }}">{{ item.name }} ({{ item.duration }} hrs)</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <a href="{% url 'weld_list' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i> Kembali
+            </a>
+            <button type="submit" class="btn btn-success text-uppercase">
+                <i class="fas fa-save me-1"></i> Simpan Welding Record
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+/* Searchable Select Styling */
+.searchable-select {
+    position: relative;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.searchable-input {
+    cursor: pointer;
+    text-align: left !important;
+    padding-right: 40px !important;
+}
+
+.clear-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #dc3545;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    z-index: 10;
+    padding: 0;
+}
+
+.clear-btn:hover {
+    background: #bb2d3b;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.clear-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.clear-btn.show {
+    display: flex;
+}
+
+.searchable-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1050;
+    display: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin-top: 2px;
+}
+
+.dropdown-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.15s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #e9ecef;
+}
+
+.dropdown-item.selected {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 500;
+}
+
+.dropdown-item.keyboard-selected {
+    background-color: #cfe2ff;
+    outline: 2px solid #0d6efd;
+}
+
+.no-results {
+    padding: 12px;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.searchable-input.has-value {
+    background-color: #e8f5e8;
+    font-weight: 500;
+}
+
+/* Validation styles */
+.searchable-input.is-invalid {
+    border-color: #dc3545;
+    background-image: none;
+}
+
+.searchable-input.is-valid {
+    border-color: #198754;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Searchable Select Class
+    class SearchableSelect {
+        constructor(containerSelector, options = {}) {
+            this.container = document.querySelector(containerSelector);
+            if (!this.container) return;
+            
+            this.input = this.container.querySelector('.searchable-input');
+            this.dropdown = this.container.querySelector('.searchable-dropdown');
+            this.hiddenInput = this.container.querySelector('input[type="hidden"]');
+            this.clearBtn = this.container.querySelector('.clear-btn');
+            
+            this.originalItems = [];
+            this.selectedValue = this.hiddenInput.value || '';
+            this.selectedText = this.input.value || '';
+            this.keyboardSelectedIndex = -1;
+            
+            this.init();
+        }
+        
+        init() {
+            this.originalItems = Array.from(this.dropdown.children).map(item => ({
+                element: item.cloneNode(true),
+                value: item.dataset.value,
+                text: (item.dataset.search || item.textContent.trim()).toLowerCase(),
+                originalText: item.textContent.trim()
+            }));
+            
+            // Set initial display if there's a selected value
+            if (this.selectedValue) {
+                const selectedItem = this.originalItems.find(item => item.value === this.selectedValue);
+                if (selectedItem) {
+                    this.input.value = selectedItem.originalText;
+                    this.input.classList.add('has-value');
+                }
+            }
+            
+            this.updateClearButton();
+            this.setupEvents();
+        }
+        
+        updateClearButton() {
+            if (this.clearBtn) {
+                // Show clear button if there's any text in the input field
+                if (this.input.value && this.input.value.trim() !== '') {
+                    this.clearBtn.classList.add('show');
+                } else {
+                    this.clearBtn.classList.remove('show');
+                }
+            }
+        }
+        
+        clearSelection() {
+            this.selectedValue = '';
+            this.selectedText = '';
+            this.input.value = '';
+            this.hiddenInput.value = '';
+            this.input.classList.remove('has-value', 'is-valid', 'is-invalid');
+            this.updateClearButton();
+            this.hideDropdown();
+            this.input.focus();
+            
+            // Remove error message if exists
+            const errorDiv = this.input.parentElement.parentElement.querySelector('.invalid-feedback');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+        }
+        
+        setupEvents() {
+            // Clear button click
+            if (this.clearBtn) {
+                this.clearBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.clearSelection();
+                });
+            }
+            
+            this.input.addEventListener('focus', () => {
+                this.showDropdown();
+            });
+            
+            this.input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    this.hideDropdown();
+                }, 200);
+            });
+            
+            this.input.addEventListener('input', () => {
+                this.filterItems();
+                this.keyboardSelectedIndex = -1;
+                // Clear hidden input when user types
+                if (this.input.value !== this.selectedText) {
+                    this.hiddenInput.value = '';
+                    this.input.classList.remove('has-value', 'is-valid');
+                    this.updateClearButton();
+                }
+            });
+            
+            // Keyboard navigation
+            this.input.addEventListener('keydown', (e) => {
+                const visibleItems = Array.from(this.dropdown.querySelectorAll('.dropdown-item:not(.no-results)'));
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.keyboardSelectedIndex = Math.min(this.keyboardSelectedIndex + 1, visibleItems.length - 1);
+                    this.updateKeyboardSelection(visibleItems);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.keyboardSelectedIndex = Math.max(this.keyboardSelectedIndex - 1, -1);
+                    this.updateKeyboardSelection(visibleItems);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this.keyboardSelectedIndex >= 0 && visibleItems[this.keyboardSelectedIndex]) {
+                        const item = visibleItems[this.keyboardSelectedIndex];
+                        this.selectItem(item.dataset.value, item.textContent.trim());
+                    }
+                } else if (e.key === 'Escape') {
+                    this.hideDropdown();
+                    this.input.blur();
+                } else if (e.key === 'Delete') {
+                    // Delete key to clear
+                    e.preventDefault();
+                    this.clearSelection();
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!this.container.contains(e.target)) {
+                    this.hideDropdown();
+                    // Reset to last valid selection if input doesn't match
+                    if (this.input.value !== this.selectedText) {
+                        this.input.value = this.selectedText;
+                    }
+                }
+            });
+        }
+        
+        updateKeyboardSelection(visibleItems) {
+            // Remove all keyboard selection highlights
+            visibleItems.forEach(item => item.classList.remove('keyboard-selected'));
+            
+            // Add highlight to current selection
+            if (this.keyboardSelectedIndex >= 0 && visibleItems[this.keyboardSelectedIndex]) {
+                const selectedItem = visibleItems[this.keyboardSelectedIndex];
+                selectedItem.classList.add('keyboard-selected');
+                
+                // Scroll into view if needed
+                selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+        
+        showDropdown() {
+            this.dropdown.style.display = 'block';
+            this.filterItems();
+        }
+        
+        hideDropdown() {
+            this.dropdown.style.display = 'none';
+            this.keyboardSelectedIndex = -1;
+        }
+        
+        filterItems() {
+            const searchTerm = this.input.value.toLowerCase().trim();
+            this.dropdown.innerHTML = '';
+            
+            let visibleCount = 0;
+            
+            this.originalItems.forEach(item => {
+                if (searchTerm === '' || item.text.includes(searchTerm)) {
+                    const clonedItem = item.element.cloneNode(true);
+                    
+                    if (item.value === this.selectedValue) {
+                        clonedItem.classList.add('selected');
+                    }
+                    
+                    clonedItem.addEventListener('click', () => {
+                        this.selectItem(item.value, item.originalText);
+                    });
+                    
+                    this.dropdown.appendChild(clonedItem);
+                    visibleCount++;
+                }
+            });
+            
+            if (visibleCount === 0 && searchTerm !== '') {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'Tidak ada hasil';
+                this.dropdown.appendChild(noResults);
+            }
+        }
+        
+        selectItem(value, text) {
+            this.selectedValue = value;
+            this.selectedText = text;
+            this.input.value = text;
+            this.hiddenInput.value = value;
+            
+            if (value) {
+                this.input.classList.add('has-value', 'is-valid');
+                this.input.classList.remove('is-invalid');
+            } else {
+                this.input.classList.remove('has-value', 'is-valid', 'is-invalid');
+            }
+            
+            this.updateClearButton();
+            this.hideDropdown();
+            
+            // Remove error message if exists
+            const errorDiv = this.input.parentElement.parentElement.querySelector('.invalid-feedback');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+        }
+    }
+
+    // Initialize Operator Searchable Select
+    new SearchableSelect('#operator_searchable');
+
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const operatorHidden = document.getElementById('operator_hidden');
+        const operatorInput = document.getElementById('operator_search');
+        
+        if (!operatorHidden.value) {
+            e.preventDefault();
+            operatorInput.classList.add('is-invalid');
+            operatorInput.focus();
+            
+            // Show error message
+            let errorDiv = operatorInput.parentElement.parentElement.querySelector('.invalid-feedback');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback d-block';
+                errorDiv.textContent = 'Silakan pilih operator dari daftar';
+                operatorInput.parentElement.parentElement.appendChild(errorDiv);
+            }
+            
+            return false;
+        }
+    });
+});
+</script>
+
+{% endblock %}

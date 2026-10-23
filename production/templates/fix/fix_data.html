@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tools"></i> Fix Old Weld Data
+                    </h4>
+                </div>
+                <div class="card-body">
+                    
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    {% if total_issues > 0 %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Found {{ total_issues }} multi-stage combination(s) with issues</strong>
+                            <p class="mb-0 mt-2">
+                                Issues include: incorrect UNCOMPLETED status (should be COMPLETED) 
+                                and/or wrong output values (not matching 1.0 / total_stages)
+                            </p>
+                        </div>
+                        
+                        <form method="post" onsubmit="return confirm('⚠️ Are you sure you want to FIX ALL {{ total_issues }} issues?\n\nThis will:\n✅ Change all UNCOMPLETED to COMPLETED (if any stage is completed)\n✅ Recalculate output values to equal distribution');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="fix_all">
+                            <button type="submit" class="btn btn-success btn-lg mb-3">
+                                <i class="fas fa-wrench"></i> Fix All {{ total_issues }} Issues
+                            </button>
+                        </form>
+                        
+                        <hr>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th width="15%">BJO</th>
+                                        <th width="10%">Joint</th>
+                                        <th width="15%">Side</th>
+                                        <th width="8%" class="text-center">Stages</th>
+                                        <th width="12%" class="text-center">Issues</th>
+                                        <th width="10%" class="text-center">Correct Output</th>
+                                        <th width="15%" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for issue in issues %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td><strong>{{ issue.bjo }}</strong></td>
+                                        <td>{{ issue.joint_number }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ issue.pin_or_box }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">{{ issue.total_stages }} stages</span>
+                                        </td>
+                                        <td class="text-center">
+                                            {% if issue.has_status_issue %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                                {{ issue.uncompleted_stages }} UNCOMPLETED
+                                            </span>
+                                            {% endif %}
+                                            {% if issue.has_output_issue %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-calculator"></i>
+                                                Wrong Output
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <code>{{ issue.correct_output_per_stage }}</code>
+                                        </td>
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-primary" type="button" 
+                                                    data-bs-toggle="collapse" 
+                                                    data-bs-target="#detail{{ forloop.counter }}">
+                                                <i class="fas fa-eye"></i> Show Details
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="collapse" id="detail{{ forloop.counter }}">
+                                        <td colspan="8" class="bg-light">
+                                            <div class="p-3">
+                                                <h6 class="mb-3">
+                                                    <i class="fas fa-list"></i> 
+                                                    Stages for BJO {{ issue.bjo }} - Joint {{ issue.joint_number }} - {{ issue.pin_or_box }}
+                                                </h6>
+                                                
+                                                <table class="table table-sm table-bordered">
+                                                    <thead class="table-secondary">
+                                                        <tr>
+                                                            <th width="8%">Stage</th>
+                                                            <th width="12%">Status</th>
+                                                            <th width="12%">Output</th>
+                                                            <th width="12%">Expected Output</th>
+                                                            <th width="30%">Comment</th>
+                                                            <th width="15%">Created At</th>
+                                                            <th width="11%">Issue?</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for detail in issue.details %}
+                                                        <tr {% if detail.is_wrong_status or detail.is_wrong_output %}class="table-danger"{% endif %}>
+                                                            <td class="text-center">
+                                                                <strong>#{{ detail.stage }}</strong>
+                                                            </td>
+                                                            <td>
+                                                                {% if detail.status == 'UNCOMPLETED' %}
+                                                                <span class="badge bg-warning text-dark">{{ detail.status }}</span>
+                                                                {% else %}
+                                                                <span class="badge bg-success">{{ detail.status }}</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <code>{{ detail.output }}</code>
+                                                            </td>
+                                                            <td>
+                                                                <code>{{ detail.expected_output }}</code>
+                                                                {% if forloop.last %}
+                                                                <small class="text-muted">(remaining)</small>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td><small>{{ detail.comment }}</small></td>
+                                                            <td><small>{{ detail.created_at|date:"d/m/Y H:i" }}</small></td>
+                                                            <td class="text-center">
+                                                                {% if detail.is_wrong_status %}
+                                                                <span class="badge bg-danger">Wrong Status</span>
+                                                                {% endif %}
+                                                                {% if detail.is_wrong_output %}
+                                                                <span class="badge bg-warning text-dark">Wrong Output</span>
+                                                                {% endif %}
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                                
+                                                <form method="post" class="mt-2" 
+                                                      onsubmit="return confirm('Fix this combination?\n\nBJO: {{ issue.bjo }}\nJoint: {{ issue.joint_number }}\nSide: {{ issue.pin_or_box }}');">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="fix_single">
+                                                    {% for detail in issue.details %}
+                                                    <input type="hidden" name="detail_ids[]" value="{{ detail.id }}">
+                                                    {% endfor %}
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        <i class="fas fa-wrench"></i> Fix This Combination Only
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>✅ No issues found!</strong>
+                            <p class="mb-0 mt-2">
+                                All weld data is correct. No action needed.
+                            </p>
+                        </div>
+                    {% endif %}
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Daftar Produksi</h2>
+
+    <!-- Tombol Cetak PDF & Tambah Produksi -->
+    <div class="d-flex justify-content-end flex-wrap mb-3 gap-2">
+        <a href="{% url 'production_pdf' %}?date={{ selected_date }}&machine={{ selected_machine }}"
+           class="btn text-white"
+           style="background-color: var(--bs-danger);"
+           target="_blank">
+            <i class="fas fa-file-pdf me-1"></i> Cetak PDF
+        </a>
+        <a href="{% url 'production_add' %}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Tambah Produksi
+        </a>
+    </div>
+
+    <!-- Form Filter -->
+    <form method="get" class="card p-3 mb-3">
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label for="date" class="form-label">Tanggal</label>
+                <input type="date" name="date" id="date" class="form-control" value="{{ selected_date }}">
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="machine" class="form-label">Mesin</label>
+                <select name="machine" id="machine" class="form-select">
+                    <option value="">-- Semua Mesin --</option>
+                    {% for m in machines %}
+                        <option value="{{ m.id }}" {% if m.id|stringformat:'s' == selected_machine %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-4 d-flex flex-wrap align-items-end gap-2">
+                <button type="submit" class="btn w-100 w-md-auto text-white" style="background-color: var(--bs-primary);">
+                    Filter
+                </button>
+                <a href="{% url 'production_list' %}" class="btn w-100 w-md-auto text-dark" style="background-color: var(--bs-warning);">
+                    Reset
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tabel Data -->
+    <div class="card p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Tanggal</th>
+                        <th>Mesin</th>
+                        <th>Operator</th>
+                        <th>Shift</th>
+                        <th>OEE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in headers %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'production_edit' item.id %}">
+                                {{ forloop.counter0|add:headers.start_index }}
+                            </a>
+                        </td>
+                        <td>{{ item.date }}</td>
+                        <td>{{ item.machine }}</td>
+                        <td>{{ item.operator }}</td>
+                        <td>{{ item.shift }}</td>
+                        <td>{{ item.oee_score|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">Belum ada data.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if headers.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center flex-wrap">
+                {% if headers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ headers.previous_page_number }}&date={{ selected_date }}&machine={{ selected_machine }}">Sebelumnya</a>
+                </li>
+                {% endif %}
+
+                {% for num in headers.paginator.page_range %}
+                    {% if headers.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > headers.number|add:'-3' and num < headers.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}&date={{ selected_date }}&machine={{ selected_machine }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if headers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ headers.next_page_number }}&date={{ selected_date }}&machine={{ selected_machine }}">Berikutnya</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

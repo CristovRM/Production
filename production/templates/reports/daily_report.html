@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Daily Production Report</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+        th, td { border: 1px solid #333; padding: 6px 10px; font-size: 14px; }
+        th { background: #eee; }
+        h2 { margin-top: 0; }
+        .section { margin-bottom: 40px; }
+    </style>
+</head>
+<body>
+
+<div class="section">
+    <h2>DAILY PRODUCTION REPORT</h2>
+    <p><strong>Date:</strong> {{ header.date }}</p>
+    <p><strong>Machine:</strong> {{ header.machine }}</p>
+    <p><strong>Shift:</strong> {{ header.shift }}</p>
+    <p><strong>Operator:</strong> {{ header.operator }}</p>
+</div>
+
+<div class="section">
+    <table>
+        <tr>
+            <th>No</th>
+            <th>BJO</th>
+            <th>Size</th>
+            <th>Joint Number</th>
+            <th>P/B</th>
+            <th>Work Hour</th>
+            <th>NCR</th>
+        </tr>
+        {% for d in details %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ d.bjo.bjo }}</td>
+            <td>{{ d.bjo.size }}</td>
+            <td>{{ d.joint_number }}</td>
+            <td>{{ d.pin_or_box }}</td>
+            <td>
+                {% if d.start_time and d.stop_time %}
+                    {{ d.start_time|time:"H:i" }} - {{ d.stop_time|time:"H:i" }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>{{ d.ncr|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="section">
+    <h4>COMMENTS:</h4>
+    <p>{{ header.comment|default:"-" }}</p>
+</div>
+
+</body>
+</html>

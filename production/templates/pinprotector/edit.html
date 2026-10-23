@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block title %}Edit PIN protector{% endblock%}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Edit PIN Protector</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if item.is_threaded and item.is_used %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Perhatian:</strong> PIN Protector ini sudah di-threaded dan phosphated, tidak dapat diedit.
+        </div>
+        
+        <div class="card p-3" style="background-color: #f8f9fa;">
+            <div class="mb-3">
+                <label class="form-label fw-bold">BJO (Read Only)</label>
+                <div class="form-control-plaintext">
+                    {% if item.bjo %}
+                        bjo: {{ item.bjo.bjo }} | customer: {{ item.bjo.customer }} | {{ item.bjo.process_type.name }} {{ item.bjo.size.od }} x {{ item.bjo.size.thickness }} | {{ item.bjo.bp }} | qty: {{ item.bjo.qty|floatformat:2 }} joints
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Serial Number (Read Only)</label>
+                <div class="form-control-plaintext fw-bold">{{ item.serial_number }}</div>
+            </div>
+        </div>
+    {% else %}
+        <form method="post" class="card p-3">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">Pilih BJO</label>
+                <select name="bjo" class="form-select" required id="bjo-select">
+                    <option value="">-- Pilih BJO --</option>
+                    {% for bjo in jobheaders %}
+                        <option value="{{ bjo.id }}" 
+                                data-remaining="{{ bjo.remaining_slots }}"
+                                data-qty="{{ bjo.qty }}"
+                                data-existing="{{ bjo.existing_count }}"
+                                {% if bjo.remaining_slots <= 0 and bjo != item.bjo %}disabled{% endif %}
+                                {% if bjo == item.bjo %}selected{% endif %}>
+                            bjo: {{ bjo.bjo }} | {{ bjo.customer }} | {{ bjo.process_type.name }} {{ bjo.size.od }} x {{ bjo.size.thickness }} | {{ bjo.bp }} | qty: {{ bjo.qty|floatformat:2 }} joints | tersisa: {{ bjo.remaining_slots }}
+                            {% if bjo.remaining_slots <= 0 and bjo != item.bjo %} (PENUH){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text mt-2">
+                    <small id="remaining-info" class="text-muted"></small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Serial Number</label>
+                <input type="text" name="serial_number" class="form-control" value="{{ item.serial_number }}" required>
+            </div>
+    {% endif %}
+
+    <!-- Status Information (always visible) -->
+    <div class="mb-4">
+        <h5 class="mb-3">Status PIN Protector</h5>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card border-0" style="background-color: #f8f9fa;">
+                    <div class="card-body p-3">
+                        <label class="form-label fw-bold">Threaded</label>
+                        <div>
+                            <span class="{% if item.is_threaded %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {% if item.is_threaded %}✔ Sudah di-threaded{% else %}✘ Belum di-threaded{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-0" style="background-color: #f8f9fa;">
+                    <div class="card-body p-3">
+                        <label class="form-label fw-bold">Phosphated</label>
+                        <div>
+                            <span class="{% if item.is_used %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {% if item.is_used %}✔ Sudah di-phosphated{% else %}✘ Belum di-phosphated{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-end">
+        {% if not item.is_threaded or not item.is_used %}
+            <a href="{% url 'pinprotector_list' %}" class="btn btn-secondary me-2">Kembali</a>
+            <button type="submit" class="btn btn-success" id="submit-btn">Simpan Perubahan</button>
+        {% else %}
+            <a href="{% url 'pinprotector_list' %}" class="btn btn-secondary">Kembali</a>
+        {% endif %}
+    </div>
+    
+    {% if not item.is_threaded or not item.is_used %}
+        </form>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Hanya jalankan script jika pin protector belum selesai semua proses
+    if (document.getElementById('bjo-select')) {
+        const bjoSelect = document.getElementById('bjo-select');
+        const remainingInfo = document.getElementById('remaining-info');
+        const submitBtn = document.getElementById('submit-btn');
+
+        function updateBjoInfo() {
+            const selectedOption = bjoSelect.options[bjoSelect.selectedIndex];
+            
+            if (selectedOption.value === '') {
+                remainingInfo.textContent = '';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const remaining = parseInt(selectedOption.getAttribute('data-remaining') || '0');
+            const qty = parseInt(selectedOption.getAttribute('data-qty') || '0');
+            const existing = parseInt(selectedOption.getAttribute('data-existing') || '0');
+            
+            if (remaining > 0 || selectedOption.hasAttribute('selected')) {
+                remainingInfo.innerHTML = `
+                    <span class="text-success">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Sisa slot yang dapat ditambahkan: <strong>${remaining}</strong> 
+                        (${existing}/${qty} sudah terisi)
+                    </span>
+                `;
+                submitBtn.disabled = false;
+            } else {
+                remainingInfo.innerHTML = `
+                    <span class="text-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        BJO ini sudah penuh, tidak dapat dipilih 
+                        (${existing}/${qty})
+                    </span>
+                `;
+                submitBtn.disabled = true;
+            }
+        }
+
+        // Event listeners
+        bjoSelect.addEventListener('change', updateBjoInfo);
+        
+        // Initialize pada load
+        updateBjoInfo();
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const selectedOption = bjoSelect.options[bjoSelect.selectedIndex];
+            const remaining = parseInt(selectedOption.getAttribute('data-remaining') || '0');
+            
+            // Allow submission if it's the current BJO (even if remaining is 0)
+            if (remaining <= 0 && !selectedOption.hasAttribute('selected')) {
+                e.preventDefault();
+                alert('BJO yang dipilih sudah penuh!');
+                return false;
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.alert i {
+    vertical-align: middle;
+}
+
+#remaining-info {
+    font-size: 0.9rem;
+}
+
+.form-select option:disabled {
+    color: #6c757d !important;
+    background-color: #f8f9fa !important;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card .card-body {
+    border-radius: 0.375rem;
+}
+
+.fw-bold {
+    font-weight: 600 !important;
+}
+</style>
+{% endblock %}

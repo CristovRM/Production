@@ -1,0 +1,22 @@
+[
+  {
+    "model": "production.process",
+    "pk": 1,
+    "fields": {
+      "name": "THREADING",
+      "rate": "159.64",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.process",
+    "pk": 2,
+    "fields": {
+      "name": "WELDING",
+      "rate": "143.10",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

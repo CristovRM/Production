@@ -1,0 +1,289 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan RECORD THREADING</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            margin: 40px;
+            color: #333;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 15px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-top img {
+            height: 50px;
+            object-fit: contain;
+            margin-right: 10px;
+        }
+
+        .company-info h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c5282;
+            margin: 0;
+        }
+
+        .header-date {
+            font-size: 10pt;
+            text-align: right;
+            background-color: #f7fafc;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .header-date p {
+            margin: 0;
+        }
+
+        .main-title {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c5282;
+            margin-top: 25px;
+            margin-bottom: 3px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 10pt;
+            font-style: italic;
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        /* Filter info styling */
+        .filter-info {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            font-size: 9pt;
+            color: #495057;
+        }
+
+        .filter-info strong {
+            color: #2c5282;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 8pt;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 6px 5px;
+            text-align: center;
+            vertical-align: middle;
+            word-break: break-word;
+            white-space: normal;
+        }
+
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+        /* Lebar kolom yang disesuaikan dengan template list */
+        th:nth-child(1), td:nth-child(1)   { width: 5%; }    /* No */
+        th:nth-child(2), td:nth-child(2)   { width: 10%; }   /* Tanggal */
+        th:nth-child(3), td:nth-child(3)   { width: 15%; }   /* Machine */
+        th:nth-child(4), td:nth-child(4)   { width: 10%; }   /* Shift */
+        th:nth-child(5), td:nth-child(5)   { width: 15%; }   /* Operator */
+        th:nth-child(6), td:nth-child(6)   { width: 12%; }   /* Booked Hours */
+        th:nth-child(7), td:nth-child(7)   { width: 10%; }   /* Actual Output */
+        th:nth-child(8), td:nth-child(8)   { width: 10%; }   /* Actual Hours */
+        th:nth-child(9), td:nth-child(9)   { width: 8%; }    /* Posted */
+        th:nth-child(10), td:nth-child(10) { width: 5%; }    /* Aksi (disembunyikan di PDF) */
+
+        /* Kolom isi wrap + rata kiri untuk text */
+        td:nth-child(3),
+        td:nth-child(5) {
+            text-align: left;
+            font-size: 7pt;
+            line-height: 1.3;
+            padding: 4px;
+        }
+
+        /* Status styling */
+        .status-posted {
+            background-color: #d4edda;
+            color: #155724;
+            font-weight: bold;
+            border-radius: 3px;
+            padding: 2px 4px;
+        }
+
+        .status-draft {
+            background-color: #fff3cd;
+            color: #856404;
+            font-weight: bold;
+            border-radius: 3px;
+            padding: 2px 4px;
+        }
+
+        /* Hide action column in PDF */
+        .hide-in-pdf {
+            display: none;
+        }
+
+        @media print {
+            body {
+                margin: 20px;
+                font-size: 9pt;
+            }
+
+            table {
+                font-size: 7pt;
+            }
+
+            th, td {
+                padding: 3px 2px;
+            }
+
+            .filter-info {
+                font-size: 8pt;
+            }
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-size: 9pt;
+            text-align: right;
+            color: #777;
+            border-top: 1px dashed #aaa;
+            padding-top: 8px;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f8ff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header-top">
+        <div class="logo-section">
+            <img src="{{ logo_url }}" alt="Logo NOV">
+            <div class="company-info">
+                <h1>PT H-Tech Oil Field Equipment NOV</h1>
+            </div>
+        </div>
+        <div class="header-date">
+            <p><strong>Tanggal Cetak:</strong><br>{{ today|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+
+    <!-- Judul -->
+    <div class="main-title">LAPORAN RECORD THREADING</div>
+    <div class="subtitle">Daftar Record Threading yang telah terdaftar dalam sistem</div>
+
+    <!-- Filter Information (jika ada filter yang aktif) -->
+    {% if query or filter_machine or filter_date or filter_status %}
+    <div class="filter-info">
+        <strong>Filter Aktif:</strong>
+        {% if query %} Pencarian: "{{ query }}" |{% endif %}
+        {% if filter_machine %} Mesin: {{ filter_machine }} |{% endif %}
+        {% if filter_date %} Tanggal: {{ filter_date|date:"d/m/Y" }} |{% endif %}
+        {% if filter_status %} Status: {% if filter_status == 'posted' %}Posted{% else %}Draft{% endif %} |{% endif %}
+        <em>Data yang ditampilkan telah difilter sesuai kriteria di atas.</em>
+    </div>
+    {% endif %}
+
+    <!-- Tabel -->
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Tanggal</th>
+                <th>Machine</th>
+                <th>Shift</th>
+                <th>Operator</th>
+                <th>Booked Hours</th>
+                <th>Actual Output</th>
+                <th>Actual Hours</th>
+                <th>Posted</th>
+                <th class="hide-in-pdf">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in headers %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.date|date:"d/m/Y" }}</td>
+                <td>{{ item.machine.name|default:"-" }}</td>
+                <td>{{ item.shift.name|default:"-" }}</td>
+                <td>{{ item.operator.name|default:"-" }}</td>
+                <td>{{ item.booked_hours.duration|default:"-" }}{% if item.booked_hours.duration %} hrs{% endif %}</td>
+                <td>
+                    {% if item.calculated_actual_output %}
+                        {{ item.calculated_actual_output }}
+                    {% elif item.actual_output %}
+                        {{ item.actual_output }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.calculated_actual_hours %}
+                        {{ item.calculated_actual_hours|floatformat:2 }}
+                    {% elif item.actual_hours %}
+                        {{ item.actual_hours }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.is_posted %}
+                        <span class="status-posted">Posted</span>
+                    {% else %}
+                        <span class="status-draft">Draft</span>
+                    {% endif %}
+                </td>
+                <td class="hide-in-pdf">-</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9">Tidak ada data tersedia.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Dokumen ini dihasilkan secara otomatis oleh sistem.</p>
+        {% if headers %}
+        <p>Total {{ headers|length }} record threading ditampilkan.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>

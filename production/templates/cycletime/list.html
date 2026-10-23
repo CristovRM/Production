@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <!-- Django Messages Display -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-hide-alert" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <h2 class="mb-4">Daftar Cycle Time</h2>
+
+    <!-- Add Button and PDF Export -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <!-- Info Badge jika ada data yang outdated -->
+            {% if outdated_count %}
+            <div class="alert alert-info d-inline-flex align-items-center" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <span>{{ outdated_count }} data dengan cost tidak sesuai rate terbaru. Cost akan terupdate otomatis saat edit process.</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="d-flex gap-2">
+            <a href="{% url 'cycletime_pdf' %}?q={{ query }}&process={{ filter_process }}&status={{ filter_status }}"
+               class="btn btn-danger text-white"
+               target="_blank">
+                <i class="fas fa-file-pdf me-1"></i> Export to PDF
+            </a>
+            <a href="{% url 'cycletime_add' %}" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i> Tambah Cycle Time
+            </a>
+        </div>
+    </div>
+
+    <!-- Enhanced Search Form -->
+    <form method="get" class="card p-3 mb-3">
+        <div class="row g-3">
+            <!-- Baris Pertama -->
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="form-label">Pencarian</label>
+                <input type="text" name="q" class="form-control" placeholder="Cari Process, OD, Grade..." value="{{ query }}">
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="form-label">Filter Process Type</label>
+                <select name="process" class="form-select">
+                    <option value="">-- Semua Process --</option>
+                    {% for process_option in process_options %}
+                        <option value="{{ process_option.id }}" {% if process_option.id|stringformat:"s" == filter_process %}selected{% endif %}>{{ process_option.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">-- Semua Status --</option>
+                    <option value="sesuai" {% if filter_status == 'sesuai' %}selected{% endif %}>Sesuai Rate</option>
+                    <option value="outdated" {% if filter_status == 'outdated' %}selected{% endif %}>Perlu Update</option>
+                </select>
+            </div>
+
+            <!-- Baris Kedua - Action Buttons -->
+            <div class="col-12 d-flex flex-wrap align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+                <a href="{% url 'cycletime_list' %}" class="btn btn-warning text-dark">
+                    <i class="fas fa-refresh me-1"></i> Reset
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Info Filter Aktif -->
+    {% if query or filter_process or filter_status %}
+    <div class="alert alert-info">
+        <strong>Filter Aktif:</strong>
+        {% if query %}<span class="badge bg-primary me-1">Pencarian: {{ query }}</span>{% endif %}
+        {% if filter_process %}<span class="badge bg-primary me-1">Process: {{ filter_process_name }}</span>{% endif %}
+        {% if filter_status %}<span class="badge bg-primary me-1">Status: {% if filter_status == 'sesuai' %}Sesuai Rate{% else %}Perlu Update{% endif %}</span>{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Table -->
+    <div class="card p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Process Type</th>
+                        <th>Rate/Hour</th>
+                        <th>OD Thickness</th>
+                        <th>Material Grade</th>
+                        <th>Hours</th>
+                        <th>Cost</th>
+                        <th>Status</th>
+                        <th>Info Product</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ct in items %}
+                        <tr>
+                            <td>{{ forloop.counter0|add:items.start_index }}</td>
+                            <td>{{ ct.process_type.name }}</td>
+                            <td>{{ ct.process_type.rate|floatformat:2 }}</td>
+                            <td>{{ ct.od_thickness }}</td>
+                            <td>{{ ct.ct_for }}</td>
+                            <td>{{ ct.hours|floatformat:2 }}</td>
+                            <td>{{ ct.cost|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge {{ ct.status_badge }}">{{ ct.status_text }}</span>
+                            </td>
+                            <td>{{ ct.info_product|default:"-" }}</td>
+                            <td>
+                                <div class="d-flex justify-content-center gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="confirmEdit('{{ ct.process_type.name }} - {{ ct.od_thickness }} - {{ ct.ct_for }}', '{% url 'cycletime_edit' ct.id %}')" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmDelete('{{ ct.process_type.name }} - {{ ct.od_thickness }} - {{ ct.ct_for }}', '{{ ct.id }}')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center">Belum ada data cycle time dengan filter yang dipilih.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if items.has_other_pages %}
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                {% if items.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ items.previous_page_number }}&q={{ query }}&process={{ filter_process }}&status={{ filter_status }}">←</a>
+                    </li>
+                {% endif %}
+                {% for num in items.paginator.page_range %}
+                    {% if items.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num >= items.number|add:'-2' and num <= items.number|add:'2' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ query }}&process={{ filter_process }}&status={{ filter_status }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if items.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ items.next_page_number }}&q={{ query }}&process={{ filter_process }}&status={{ filter_status }}">→</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Edit -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Edit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin mengedit Cycle Time <strong id="nameToEdit"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <a id="editConfirmButton" href="#" class="btn btn-primary">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus Cycle Time <strong id="nameToDelete"></strong>?</p>
+                <p class="text-danger"><small>Tindakan ini tidak dapat dibatalkan!</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto hide alerts
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 2500);
+    });
+
+    // Highlight rows dengan cost yang tidak sesuai
+    const table = document.querySelector('table tbody');
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const statusBadge = row.querySelector('.badge');
+        if (statusBadge && statusBadge.classList.contains('bg-warning')) {
+            row.classList.add('table-warning');
+        }
+    });
+});
+
+// Fungsi untuk konfirmasi edit
+function confirmEdit(name, editUrl) {
+    document.getElementById('nameToEdit').textContent = name;
+    document.getElementById('editConfirmButton').href = editUrl;
+    var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    editModal.show();
+}
+
+// Fungsi untuk konfirmasi delete
+function confirmDelete(name, id) {
+    document.getElementById('nameToDelete').textContent = name;
+    document.getElementById('deleteForm').action = "{% url 'cycletime_delete' 0 %}".replace('0', id);
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+
+<style>
+/* Custom alert styles */
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-error, .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info {
+    background-color: #cce8f4;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+/* Smooth fade out animation for auto-hiding alerts */
+.alert.fade {
+    transition: opacity 0.5s ease-out;
+}
+
+.alert i {
+    vertical-align: middle;
+}
+
+/* Table styling improvements */
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Button hover effects */
+.btn-outline-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+}
+
+.btn-outline-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(220,53,69,0.3);
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .table-responsive {
+        border: none;
+    }
+    
+    .btn {
+        margin-bottom: 0.25rem;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,2555 @@
+{% extends 'base.html' %}
+{% block title %}Record Bevel time{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-12 col-md-6">
+            <h2>Beveling Record Detail</h2>
+        </div>
+        <div class="col-12 col-md-6 text-md-end text-start mt-2 mt-md-0">
+            <a class="btn btn-primary text-uppercase" href="{% url 'bevel_list' %}">
+                <i class="fas fa-arrow-left me-1"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show auto-hide-alert" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if header %}
+        <div class="card p-3 mb-3">
+            <h5 class="mb-3">Beveling Header Information</h5>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tr><td width="180">Date</td><td>:</td><td>{{ header.date|date:"d/m/Y" }}</td></tr>
+                    <tr><td>Machine</td><td>:</td><td>{{ header.machine.name }}</td></tr>
+                    <tr><td>Shift</td><td>:</td><td>{{ header.shift.name }}</td></tr>
+                    <tr><td>Operator</td><td>:</td><td>{{ header.operator.name }} ({{ header.operator.initial }})</td></tr>
+                    <tr><td>Booked Hours</td><td>:</td><td>{{ header.booked_hours.name }} ({{ header.booked_hours.duration }} hrs)</td></tr>
+                    {% if header.is_posted %}
+                    <tr>
+                        <td>Status</td>
+                        <td>:</td>
+                        <td>
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>POSTED
+                            </span>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+
+            {% if not header.is_posted %}
+                {# DRAFT - Semua user bisa input (termasuk operator) #}
+                <form method="post" id="bevelingForm" class="mt-3">
+                    {% csrf_token %}
+                    <h6 class="mb-3">Add Beveling Detail</h6>
+                    <div class="row g-3">
+                        <!-- BJO dengan Search -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">BJO *</label>
+                            <div class="searchable-select" id="bjo_searchable">
+                                <input type="text" 
+                                       id="bjo_search" 
+                                       class="form-control form-control-sm searchable-input" 
+                                       placeholder="Type to search BJO..." 
+                                       autocomplete="off">
+                                <div class="searchable-dropdown" id="bjo_dropdown">
+                                    <div class="dropdown-item" data-value=""></div>
+                                    {% for job in job_list %}
+                                        <div class="dropdown-item" 
+                                             data-value="{{ job.id }}" 
+                                             data-process="{{ job.process_type.name|lower }}"
+                                             data-text="({{ job.process_type.name }}) BJO {{ job.bjo }} - {{ job.customer }}">
+                                            ({{ job.process_type.name }}) BJO {{ job.bjo }} - {{ job.customer }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <input type="hidden" name="bjo" id="bjo_hidden" required>
+                            </div>
+                        </div>
+
+                        <!-- Joint Number dengan Search -->
+                        <div class="col-12 col-md-2">
+                            <label class="form-label">
+                                <span id="joint_label">Joint Number</span> *
+                            </label>
+                            <div class="searchable-select" id="joint_searchable">
+                                <input type="text" 
+                                       id="joint_search" 
+                                       class="form-control form-control-sm searchable-input" 
+                                       placeholder="Select BJO first..." 
+                                       autocomplete="off" 
+                                       disabled>
+                                <div class="searchable-dropdown" id="joint_dropdown">
+                                    <div class="dropdown-item" data-value="">-- Please select BJO --</div>
+                                </div>
+                                <input type="hidden" name="joint_number" id="joint_hidden" required>
+                            </div>
+                            <small class="text-muted" id="joint_type_info">Type: PIPE Joint</small>
+                        </div>
+
+                        <!-- Job Op -->
+                        <div class="col-12 col-md-1">
+                            <label class="form-label">Job Op *</label>
+                            <input type="number" name="job_operation" id="job_operation" class="form-control form-control-sm" min="0" max="999" value="0" required>
+                        </div>
+
+                        <!-- Connector Number -->
+                        <div class="col-12 col-md-2" id="connector_field_wrapper" style="display: none;">
+                            <label class="form-label">
+                                Connector Number <span class="text-danger" id="conn_required">*</span>
+                            </label>
+                            <input type="text" 
+                                name="conn_number" 
+                                id="conn_number_input" 
+                                class="form-control form-control-sm" 
+                                placeholder="Enter connector number">
+                        </div>
+
+                        <!-- CT -->
+                        <div class="col-6 col-md-1">
+                            <label class="form-label">CT <small class="text-muted">(auto)</small></label>
+                            <input type="number" step="0.01" name="ct" id="ct_input" class="form-control form-control-sm" placeholder="0.00">
+                            <small class="text-muted">Auto from Cycle Time</small>
+                        </div>
+
+                        <!-- PB -->
+                        <div class="col-6 col-md-1">
+                            <label class="form-label">PB <small class="text-muted">(auto)</small></label>
+                            <input type="number" step="0.01" name="pb" id="pb_input" class="form-control form-control-sm" placeholder="0.00">
+                            <small class="text-muted">Auto from Price Book</small>
+                        </div>
+
+                        <!-- Comment -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Comment</label>
+                            <textarea name="comment" class="form-control form-control-sm" rows="2" placeholder="Optional comment"></textarea>
+                        </div>
+                        
+                        <!-- Status Uncompleted -->
+                        <div class="col-12 col-md-2">
+                            <label class="form-label">Status</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_uncompleted" id="is_uncompleted" role="switch">
+                                <label class="form-check-label" for="is_uncompleted">
+                                    <small>Mark as Uncompleted</small>
+                                </label>
+                            </div>
+                            <small class="text-muted">Check if work is not fully completed</small>
+                        </div>
+
+                        <!-- Dynamic Time Control -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Time Recording *</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="time_display" class="form-control" readonly 
+                                       placeholder="Click START to begin...">
+                                <button type="button" id="btnTimeControl" class="btn btn-success">
+                                    <i class="fas fa-play me-1"></i>START
+                                </button>
+                            </div>
+                            <input type="hidden" name="start_time" id="start_time" required>
+                            <input type="hidden" name="stop_time" id="stop_time" required>
+                            <small class="text-muted" id="time_status">Ready to start</small>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="col-12 text-end">
+                            <a href="{% url 'bevel_report' header.id %}" class="btn btn-info btn-sm text-uppercase mt-2" target="_blank" title="Print Daily Production Report">
+                                <i class="fas fa-print me-1"></i> Print Report
+                            </a>
+                            {% if user.role != 'operator' %}
+                                {% if detail_count > 0 %}
+                                    <a href="{% url 'finalisasi_bevel' header.id %}" class="btn btn-warning btn-sm text-uppercase mt-2">
+                                        <i class="fas fa-check me-1"></i> Finish
+                                    </a>
+                                {% else %}
+                                    <button type="button" class="btn btn-secondary btn-sm text-uppercase mt-2" disabled title="Must have at least 1 beveling detail">
+                                        <i class="fas fa-check me-1"></i> Finish
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            {% elif user.role == 'admin' or user.role == 'supervisor' %}
+                {# POSTED - Hanya Admin & Supervisor bisa input #}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This record has been posted. You are editing a posted record. Changes will affect existing reports.
+                </div>
+                
+                <form method="post" id="bevelingForm" class="mt-3">
+                    {% csrf_token %}
+                    <h6 class="mb-3">Add Beveling Detail (Posted Record)</h6>
+                    <div class="row g-3">
+                        <!-- BJO dengan Search -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">BJO *</label>
+                            <div class="searchable-select" id="bjo_searchable">
+                                <input type="text" 
+                                       id="bjo_search" 
+                                       class="form-control form-control-sm searchable-input" 
+                                       placeholder="Type to search BJO..." 
+                                       autocomplete="off">
+                                <div class="searchable-dropdown" id="bjo_dropdown">
+                                    <div class="dropdown-item" data-value=""></div>
+                                    {% for job in job_list %}
+                                        <div class="dropdown-item" 
+                                             data-value="{{ job.id }}" 
+                                             data-process="{{ job.process_type.name|lower }}"
+                                             data-text="({{ job.process_type.name }}) BJO {{ job.bjo }} - {{ job.customer }}">
+                                            ({{ job.process_type.name }}) BJO {{ job.bjo }} - {{ job.customer }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <input type="hidden" name="bjo" id="bjo_hidden" required>
+                            </div>
+                        </div>
+
+                        <!-- Joint Number dengan Search -->
+                        <div class="col-12 col-md-2">
+                            <label class="form-label">
+                                <span id="joint_label">Joint Number</span> *
+                            </label>
+                            <div class="searchable-select" id="joint_searchable">
+                                <input type="text" 
+                                       id="joint_search" 
+                                       class="form-control form-control-sm searchable-input" 
+                                       placeholder="Select BJO first..." 
+                                       autocomplete="off" 
+                                       disabled>
+                                <div class="searchable-dropdown" id="joint_dropdown">
+                                    <div class="dropdown-item" data-value="">-- Please select BJO --</div>
+                                </div>
+                                <input type="hidden" name="joint_number" id="joint_hidden" required>
+                            </div>
+                            <small class="text-muted" id="joint_type_info">Type: PIPE Joint</small>
+                        </div>
+
+                        <!-- Job Op -->
+                        <div class="col-12 col-md-1">
+                            <label class="form-label">Job Op *</label>
+                            <input type="number" name="job_operation" id="job_operation" class="form-control form-control-sm" min="0" max="999" value="0" required>
+                        </div>
+
+                        <!-- Connector Number -->
+                        <div class="col-12 col-md-2" id="connector_field_wrapper" style="display: none;">
+                            <label class="form-label">
+                                Connector Number <span class="text-danger" id="conn_required">*</span>
+                            </label>
+                            <input type="text" 
+                                name="conn_number" 
+                                id="conn_number_input" 
+                                class="form-control form-control-sm" 
+                                placeholder="Enter connector number">
+                        </div>
+
+                        <!-- CT -->
+                        <div class="col-6 col-md-1">
+                            <label class="form-label">CT <small class="text-muted">(auto)</small></label>
+                            <input type="number" step="0.01" name="ct" id="ct_input" class="form-control form-control-sm" placeholder="0.00">
+                            <small class="text-muted">Auto from Cycle Time</small>
+                        </div>
+
+                        <!-- PB -->
+                        <div class="col-6 col-md-1">
+                            <label class="form-label">PB <small class="text-muted">(auto)</small></label>
+                            <input type="number" step="0.01" name="pb" id="pb_input" class="form-control form-control-sm" placeholder="0.00">
+                            <small class="text-muted">Auto from Price Book</small>
+                        </div>
+
+                        <!-- Comment -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Comment</label>
+                            <textarea name="comment" class="form-control form-control-sm" rows="2" placeholder="Optional comment"></textarea>
+                        </div>
+                        
+                        <!-- Status Uncompleted -->
+                        <div class="col-12 col-md-2">
+                            <label class="form-label">Status</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_uncompleted" id="is_uncompleted" role="switch">
+                                <label class="form-check-label" for="is_uncompleted">
+                                    <small>Mark as Uncompleted</small>
+                                </label>
+                            </div>
+                            <small class="text-muted">Check if work is not fully completed</small>
+                        </div>
+
+                        <!-- Dynamic Time Control -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label">Time Recording *</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="time_display" class="form-control" readonly 
+                                       placeholder="Click START to begin...">
+                                <button type="button" id="btnTimeControl" class="btn btn-success">
+                                    <i class="fas fa-play me-1"></i>START
+                                </button>
+                            </div>
+                            <input type="hidden" name="start_time" id="start_time" required>
+                            <input type="hidden" name="stop_time" id="stop_time" required>
+                            <small class="text-muted" id="time_status">Ready to start</small>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="col-12 text-end">
+                            <a href="{% url 'bevel_report' header.id %}" class="btn btn-info btn-sm text-uppercase mt-2" target="_blank" title="Print Daily Production Report">
+                                <i class="fas fa-print me-1"></i> Print Report
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            {% else %}
+                {# POSTED - User lain tidak bisa input #}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Record has been posted. Cannot add new details.
+                    
+                    <div class="mt-2">
+                        <a href="{% url 'bevel_report' header.id %}" class="btn btn-info btn-sm text-uppercase" target="_blank" title="Print Daily Production Report">
+                            <i class="fas fa-print me-1"></i> Print Report
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- Beveling Detail List Table -->
+    <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Beveling Detail List</h5>
+            <a href="{% url 'bevel_report' header.id %}" class="btn btn-outline-info btn-sm text-uppercase" target="_blank" title="Print Daily Production Report">
+                <i class="fas fa-print me-1"></i> Print Report
+            </a>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center table-compact">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 35px;">No</th>
+                        <th style="width: 65px;">Start</th>
+                        <th style="width: 65px;">Stop</th>
+                        <th style="width: 75px;">Duration</th>
+                        <th style="width: 70px;">BJO</th>
+                        <th style="width: 130px;">Joint Number</th>
+                        <th style="width: 50px;">Job</th>
+                        <th style="width: 90px;">Connector</th>
+                        <th style="width: 50px;">CT</th>
+                        <th style="width: 50px;">PB</th>
+                        <th style="width: 60px;">Output</th>
+                        <th style="width: 120px;">Comment</th>
+                        <th style="width: 90px;">Status</th>
+                        <th style="width: 80px;">NCR</th>
+                        <th style="width: 110px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in detail_list %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ item.start_time|time:"H:i" }}</td>
+                            <td>{{ item.stop_time|time:"H:i" }}</td>
+                            <td>{{ item.duration_minutes|default:"-" }}</td>
+                            <td><strong>{{ item.bjo.bjo }}</strong></td>
+                            <td class="text-start" style="font-size: 0.8rem;">
+                                <strong>{{ item.joint_number|default:"-" }}</strong>
+                                {% if item.joint_type_display %}
+                                    <br><small class="{{ item.joint_type_class }}" style="font-size: 0.7rem;">({{ item.joint_type_display }})</small>
+                                {% endif %}
+                                {% if item.is_rework %}
+                                    <br><small class="badge bg-danger mt-1" style="font-size: 0.65rem;">RWK</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.job_operation|default:"-" }}</td>
+                            <td>
+                                {% if item.conn_no %}
+                                    <span class="badge bg-success" style="font-size: 0.7rem;">{{ item.conn_no }}</span>
+                                {% else %}
+                                    <span class="text-muted" style="font-size: 0.7rem;">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.ct|default:"-" }}</td>
+                            <td>{{ item.pb|default:"-" }}</td>
+                            <td><strong>{{ item.output|default:"0" }}</strong></td>
+                            <td class="text-start" style="max-width: 120px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ item.comment|default:'' }}">
+                                {{ item.comment|default:"-" }}
+                            </td>
+                            <td>
+                                {% if item.is_uncompleted %}
+                                    <span class="badge bg-warning" style="font-size: 0.65rem; padding: 0.25em 0.4em;">
+                                        <i class="fas fa-exclamation-triangle"></i> UNC
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success" style="font-size: 0.65rem; padding: 0.25em 0.4em;">
+                                        <i class="fas fa-check"></i> COM
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.has_ncr %}
+                                    {% if item.has_incomplete_ncr %}
+                                        <span class="badge bg-warning" style="font-size: 0.65rem; padding: 0.25em 0.4em;">
+                                            <i class="fas fa-exclamation-triangle"></i> {{ item.ncr_count }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-info" style="font-size: 0.65rem; padding: 0.25em 0.4em;">
+                                            <i class="fas fa-check"></i> {{ item.ncr_count }}
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not header.is_posted %}
+                                    {# DRAFT - Operator TIDAK bisa edit/delete #}
+                                    {% if user.role != 'operator' %}
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" 
+                                                    class="btn btn-info btn-sm edit-time-btn" 
+                                                    data-id="{{ item.id }}"
+                                                    data-start="{{ item.start_time|time:'H:i' }}"
+                                                    data-stop="{{ item.stop_time|time:'H:i' }}"
+                                                    data-bjo-text="BJO {{ item.bjo.bjo }} - {{ item.bjo.customer }}"
+                                                    data-joint="{{ item.joint_number }}"
+                                                    data-jobop="{{ item.job_operation }}"
+                                                    data-conn-no="{{ item.conn_no|default:'' }}"
+                                                    style="padding: 0.2rem 0.35rem; font-size: 0.75rem;"
+                                                    title="Edit Time">
+                                                <i class="fas fa-clock"></i>
+                                            </button>
+                                            
+                                            <button type="button" 
+                                                    class="btn btn-warning btn-sm edit-btn" 
+                                                    data-id="{{ item.id }}"
+                                                    data-start="{{ item.start_time|time:'H:i' }}"
+                                                    data-stop="{{ item.stop_time|time:'H:i' }}"
+                                                    data-bjo="{{ item.bjo.id }}"
+                                                    data-bjo-text="BJO {{ item.bjo.bjo }} - {{ item.bjo.customer }} ({{ item.bjo.process_type.name }})"
+                                                    data-joint="{{ item.joint_number }}"
+                                                    data-jobop="{{ item.job_operation }}"
+                                                    data-conn-no="{{ item.conn_no|default:'' }}"
+                                                    data-ct="{{ item.ct|default:'' }}"
+                                                    data-pb="{{ item.pb|default:'' }}"
+                                                    data-comment="{{ item.comment|default:'' }}"
+                                                    data-uncompleted="{{ item.is_uncompleted }}"
+                                                    style="padding: 0.2rem 0.35rem; font-size: 0.75rem;"
+                                                    title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+
+                                            <button type="button" 
+                                                    class="btn btn-danger btn-sm delete-btn" 
+                                                    data-id="{{ item.id }}"
+                                                    data-joint="{{ item.joint_number }}"
+                                                    data-bjo="{{ item.bjo.bjo }}"
+                                                    style="padding: 0.2rem 0.35rem; font-size: 0.75rem;"
+                                                    title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted" style="font-size: 0.75rem;">View Only</span>
+                                    {% endif %}
+                                {% elif user.role == 'admin' or user.role == 'supervisor' %}
+                                    {# POSTED - Hanya Admin & Supervisor bisa edit/delete #}
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" 
+                                                class="btn btn-info btn-sm edit-time-btn" 
+                                                data-id="{{ item.id }}"
+                                                data-start="{{ item.start_time|time:'H:i' }}"
+                                                data-stop="{{ item.stop_time|time:'H:i' }}"
+                                                data-bjo-text="BJO {{ item.bjo.bjo }} - {{ item.bjo.customer }}"
+                                                data-joint="{{ item.joint_number }}"
+                                                data-jobop="{{ item.job_operation }}"
+                                                data-conn-no="{{ item.conn_no|default:'' }}"
+                                                style="padding: 0.2rem 0.35rem; font-size: 0.75rem;"
+                                                title="Edit Time">
+                                            <i class="fas fa-clock"></i>
+                                        </button>
+                                        
+                                        <button type="button" 
+                                                class="btn btn-warning btn-sm edit-btn" 
+                                                data-id="{{ item.id }}"
+                                                data-start="{{ item.start_time|time:'H:i' }}"
+                                                data-stop="{{ item.stop_time|time:'H:i' }}"
+                                                data-bjo="{{ item.bjo.id }}"
+                                                data-bjo-text="BJO {{ item.bjo.bjo }} - {{ item.bjo.customer }} ({{ item.bjo.process_type.name }})"
+                                                data-joint="{{ item.joint_number }}"
+                                                data-jobop="{{ item.job_operation }}"
+                                                data-conn-no="{{ item.conn_no|default:'' }}"
+                                                data-ct="{{ item.ct|default:'' }}"
+                                                data-pb="{{ item.pb|default:'' }}"
+                                                data-comment="{{ item.comment|default:'' }}"
+                                                data-uncompleted="{{ item.is_uncompleted }}"
+                                                style="padding: 0.2rem 0.35rem; font-size: 0.75rem;"
+                                                title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+
+                                        <button type="button" 
+                                                class="btn btn-danger btn-sm delete-btn" 
+                                                data-id="{{ item.id }}"
+                                                data-joint="{{ item.joint_number }}"
+                                                data-bjo="{{ item.bjo.bjo }}"
+                                                style="padding: 0.2rem 0.35rem; font-size: 0.75rem;"
+                                                title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="15" class="text-center">There are no beveling details yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SECTION CONSUMABLE -->
+    <div class="card p-3 mt-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Beveling Consumable</h5>
+            <small class="text-muted">Consumable input used for this shift</small>
+        </div>
+
+        {% if not header.is_posted or user.role == 'admin' or user.role == 'supervisor' %}
+            {# Form Consumable - Tersedia untuk draft (non-operator) dan posted (admin/supervisor) #}
+            {% if user.role != 'operator' or header.is_posted %}
+                {% if header.is_posted %}
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This record has been posted. You are editing consumable data on a posted record.
+                    </div>
+                {% endif %}
+                
+                {% if user.role != 'operator' %}
+                    <form method="post" id="consumableForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_consumable">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="insert_snmg" class="form-label">INSERT SNMG</label>
+                                <input type="number" step="0.01" min="0" name="insert_snmg" id="insert_snmg"
+                                    class="form-control" value="{{ existing_consumable.insert_snmg|default:'0' }}"
+                                    placeholder="0.00">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="insert_dnmg" class="form-label">INSERT DNMG</label>
+                                <input type="number" step="0.01" min="0" name="insert_dnmg" id="insert_dnmg"
+                                    class="form-control" value="{{ existing_consumable.insert_dnmg|default:'0' }}"
+                                    placeholder="0.00">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="insert_bevel" class="form-label">INSERT BEVEL</label>
+                                <input type="number" step="0.01" min="0" name="insert_bevel" id="insert_bevel"
+                                    class="form-control" value="{{ existing_consumable.insert_bevel|default:'0' }}"
+                                    placeholder="0.00">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="consumable_others" class="form-label">OTHERS</label>
+                                <input type="number" step="0.01" min="0" name="consumable_others" id="consumable_others"
+                                    class="form-control" value="{{ existing_consumable.others|default:'0' }}"
+                                    placeholder="0.00">
+                            </div>
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i> {% if header.is_posted %}Update Consumable (Posted Record){% else %}Update Consumable{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                {% else %}
+                    {# Operator tidak bisa edit consumable #}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Operators cannot modify consumable data.
+                    </div>
+                {% endif %}
+            {% endif %}
+        {% else %}
+            {# Readonly Display - Untuk user lain pada posted record #}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">INSERT SNMG</label>
+                    <input type="text" class="form-control" value="{{ existing_consumable.insert_snmg|default:'0.00' }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">INSERT DNMG</label>
+                    <input type="text" class="form-control" value="{{ existing_consumable.insert_dnmg|default:'0.00' }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">INSERT BEVEL</label>
+                    <input type="text" class="form-control" value="{{ existing_consumable.insert_bevel|default:'0.00' }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">OTHERS</label>
+                    <input type="text" class="form-control" value="{{ existing_consumable.others|default:'0.00' }}" readonly>
+                </div>
+            </div>
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                The record has been posted. Consumable data cannot be changed.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal Edit Time Only -->
+    <div class="modal fade" id="editTimeModal" tabindex="-1" aria-labelledby="editTimeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTimeModalLabel">Edit Beveling Time</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editTimeForm" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit_time">
+                    <input type="hidden" name="detail_id" id="edit_time_detail_id">
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Edit Time:</strong> Enter start time and duration (hours), stop time will be calculated automatically.
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Start Time *</label>
+                                <input type="time" name="start_time" id="edit_time_start_time" class="form-control" required>
+                                <small class="text-muted">Format: HH:MM (24 hours)</small>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Duration (Hours) *</label>
+                                <input type="number" step="0.1" min="0.1" max="16" name="duration_hours" id="edit_time_duration" 
+                                       class="form-control" placeholder="1.0" required>
+                                <small class="text-muted">Example: 1.5 = 1 hour 30 minutes, max 16 hours</small>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Stop Time (Preview)</label>
+                                <input type="text" id="edit_time_stop_preview" class="form-control" readonly 
+                                       style="background-color: #f8f9fa;">
+                                <small class="text-muted">Stop time will be calculated automatically</small>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body p-3">
+                                        <h6 class="card-title mb-2">Beveling Detail Info:</h6>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <small><strong>BJO:</strong> <span id="edit_time_bjo_info">-</span></small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small><strong>Joint:</strong> <span id="edit_time_joint_info">-</span></small>
+                                            </div>
+                                            <div class="col-6">
+                                                <small><strong>Job Op:</strong> <span id="edit_time_jobop_info">-</span></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-clock me-1"></i>Update Time
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Beveling Detail -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Beveling Detail</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editForm" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="detail_id" id="edit_detail_id">
+                    <input type="hidden" name="toggle_status" value="1">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <!-- Start Time -->
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Start Time *</label>
+                                <input type="time" name="start_time" id="edit_start_time" class="form-control form-control-sm" required>
+                            </div>
+                            
+                            <!-- Stop Time -->
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Stop Time *</label>
+                                <input type="time" name="stop_time" id="edit_stop_time" class="form-control form-control-sm" required>
+                            </div>
+
+                            <!-- BJO -->
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">BJO *</label>
+                                <input type="text" id="edit_bjo_display" class="form-control form-control-sm" readonly>
+                                <input type="hidden" name="bjo" id="edit_bjo_id">
+                                <small class="text-muted">BJO cannot be changed</small>
+                            </div>
+
+                            <!-- Joint Number -->
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Joint Number *</label>
+                                <input type="text" name="joint_number" id="edit_joint_number" class="form-control form-control-sm" readonly>
+                                <small class="text-muted">Joint Number cannot be changed</small>
+                            </div>
+
+                            <!-- Job Operation -->
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Job Operation *</label>
+                                <input type="text" name="job_operation" id="edit_job_operation" class="form-control form-control-sm" maxlength="3" required>
+                            </div>
+                            
+                            <!-- Connector Number -->
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">Connector Number</label>
+                                <input type="text" name="conn_number" id="edit_conn_number" class="form-control form-control-sm" readonly>
+                                <small class="text-muted">Connector cannot be changed</small>
+                            </div>
+
+                            <!-- CT -->
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">CT</label>
+                                <input type="number" step="0.01" name="ct" id="edit_ct" class="form-control form-control-sm" placeholder="0.00">
+                            </div>
+
+                            <!-- PB -->
+                            <div class="col-12 col-md-4">
+                                <label class="form-label">PB</label>
+                                <input type="number" step="0.01" name="pb" id="edit_pb" class="form-control form-control-sm" placeholder="0.00">
+                            </div>
+
+                            <!-- Status Uncompleted Toggle -->
+                            <div class="col-12">
+                                <div class="alert alert-info mb-3" id="edit_uncompleted_alert">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Uncompleted Status:</strong> If checked, output will be 0.5 and can be completed later.
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_uncompleted" id="edit_is_uncompleted" role="switch">
+                                    <label class="form-check-label" for="edit_is_uncompleted">
+                                        <strong>Mark as Uncompleted</strong>
+                                    </label>
+                                </div>
+                                <small class="text-muted">
+                                    Check if beveling work is not fully completed. 
+                                    <br>Output will be 0.5 and can be completed later.
+                                </small>
+                            </div>
+
+                            <!-- Comment -->
+                            <div class="col-12">
+                                <label class="form-label">Comment</label>
+                                <textarea name="comment" id="edit_comment" class="form-control form-control-sm" rows="3" placeholder="Optional comment"></textarea>
+                                <small class="text-muted">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    <strong>Tips:</strong> Add "NCR" keyword to auto-create NCR record. 
+                                    Remove "NCR" keyword to delete NCR record.
+                                </small>
+                            </div>
+
+                            <!-- Warning Box -->
+                            <div class="col-12">
+                                <div class="alert alert-warning mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Warning:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>Changing <strong>UNCOMPLETED</strong> status will affect BJO quantity</li>
+                                        <li>Removing <strong>"NCR"</strong> from comment will delete NCR record</li>
+                                        <li>Adding <strong>"NCR"</strong> in comment will create NCR record</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Update Beveling Detail
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Delete Confirmation -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-warning fa-3x mb-3"></i>
+                        <h6>Are you sure you want to delete these details?</h6>
+                        <p class="text-muted mb-1">
+                            <strong>BJO:</strong> <span id="delete_bjo_info"></span>
+                        </p>
+                        <p class="text-muted mb-3">
+                            <strong>Joint:</strong> <span id="delete_joint_info"></span>
+                        </p>
+                        <div class="alert alert-warning">
+                            <small><i class="fas fa-info-circle me-1"></i>Deleted data cannot be recovered!</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <form id="deleteForm" method="post" action="{% url 'bevel_detail_delete' header.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="detail_id" id="delete_detail_id">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i>Yes, Delete!
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+.searchable-select {
+    position: relative;
+}
+
+.searchable-input {
+    cursor: pointer;
+    text-align: left !important;
+}
+
+.searchable-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.dropdown-item:hover {
+    background-color: #e9ecef;
+}
+
+.dropdown-item.selected {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.dropdown-item.hidden {
+    display: none;
+}
+
+.no-results {
+    padding: 8px 12px;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+}
+
+.searchable-dropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+.searchable-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.searchable-dropdown::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.searchable-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#btnTimeControl {
+    min-width: 100px;
+    transition: all 0.3s ease;
+}
+
+#btnTimeControl.recording {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+#time_display.recording {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+    font-weight: 600;
+}
+
+#time_status {
+    display: block;
+    min-height: 20px;
+    font-size: 0.85rem;
+}
+
+#time_display:focus {
+    background-color: #e9ecef;
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+#recording-warning {
+    animation: slideDown 0.3s ease-out;
+    border-left: 4px solid #ffc107;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.modal-body .card {
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.modal-body .card .card-body {
+    padding: 0.75rem;
+}
+
+.modal-body .card .card-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.btn-success:hover {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.btn-danger:hover {
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+}
+
+.btn-info:hover {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+}
+
+.btn-warning:hover {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+.btn + .btn {
+    margin-left: 0.25rem;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.badge.bg-success {
+    background-color: #198754 !important;
+}
+
+.badge i {
+    font-size: inherit;
+    margin-right: 2px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.form-check-input:focus {
+    border-color: #ffc107;
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+}
+
+#edit_is_uncompleted + label {
+    cursor: pointer;
+    user-select: none;
+}
+
+.table-responsive {
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s ease;
+}
+
+.table-compact {
+    font-size: 0.8rem;
+    margin-bottom: 0;
+}
+
+.table-compact thead th {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.4rem 0.3rem;
+    vertical-align: middle;
+    white-space: nowrap;
+    background-color: #f8f9fa;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.table-compact tbody td {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.3rem;
+    vertical-align: middle;
+}
+
+.table-compact .btn-group-sm > .btn {
+    padding: 0.2rem 0.35rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    border-radius: 0;
+}
+
+.table-compact .btn-group-sm > .btn:first-child {
+    border-top-left-radius: 0.25rem;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.table-compact .btn-group-sm > .btn:last-child {
+    border-top-right-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.table-compact .btn-group-sm > .btn i {
+    font-size: 0.75rem;
+}
+
+.table-compact .badge {
+    font-size: 0.65rem;
+    padding: 0.25em 0.4em;
+    font-weight: 500;
+}
+
+.table-compact tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.table-compact .text-start {
+    text-align: left !important;
+}
+
+.table-compact .text-end {
+    text-align: right !important;
+}
+
+.btn-group {
+    white-space: nowrap;
+    display: inline-flex;
+}
+
+td[title] {
+    cursor: help;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.alert {
+    border-left: 4px solid;
+    border-radius: 0.375rem;
+}
+
+.alert-warning {
+    border-left-color: #ffc107;
+    background-color: #fff3cd;
+}
+
+.alert-info {
+    border-left-color: #0dcaf0;
+    background-color: #cff4fc;
+}
+
+.alert-success {
+    border-left-color: #198754;
+    background-color: #d1e7dd;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.alert ul {
+    padding-left: 1.5rem;
+}
+
+.alert ul li {
+    margin-bottom: 0.25rem;
+}
+
+#edit_uncompleted_alert {
+    transition: all 0.3s ease;
+}
+
+.auto-hide-alert {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.text-info {
+    color: #0dcaf0 !important;
+}
+
+.text-primary {
+    color: #0d6efd !important;
+}
+
+.text-success {
+    color: #198754 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.input-group-sm > .form-control,
+.input-group-sm > .btn {
+    font-size: 0.875rem;
+}
+
+small.text-muted {
+    font-size: 0.75rem;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.fas {
+    margin-right: 0.25rem;
+}
+
+#edit_time_stop_preview {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+#edit_time_duration {
+    font-family: 'Courier New', monospace;
+}
+
+.btn,
+.form-control,
+.form-select,
+.card {
+    transition: all 0.2s ease-in-out;
+}
+
+*:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+@media (max-width: 1400px) {
+    .table-compact {
+        font-size: 0.75rem;
+    }
+    
+    .table-compact thead th {
+        font-size: 0.65rem;
+        padding: 0.3rem 0.25rem;
+    }
+    
+    .table-compact tbody td {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    #btnTimeControl {
+        min-width: 100px;
+        font-size: 0.875rem;
+    }
+    
+    #time_display {
+        font-size: 0.875rem;
+    }
+    
+    .table {
+        font-size: 0.875rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+    // Auto-hide alerts implementation
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 2500);
+    });
+
+    let isFormReady = false;
+    let jointData = [];
+    
+    // Recording state variables
+    let isRecording = false;
+    let hasUnsavedData = false;
+    let recordingStartTime = null;
+    let timerInterval = null;
+    
+    // ===== DYNAMIC TIME CONTROL =====
+    const btnTimeControl = document.getElementById('btnTimeControl');
+    const timeDisplay = document.getElementById('time_display');
+    const timeStatus = document.getElementById('time_status');
+    const startTimeHidden = document.getElementById('start_time');
+    const stopTimeHidden = document.getElementById('stop_time');
+    
+    function formatTime(date) {
+        const hh = String(date.getHours()).padStart(2, '0');
+        const mm = String(date.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    }
+    
+    function formatDuration(seconds) {
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    
+    function startRecording() {
+        const now = new Date();
+        recordingStartTime = now;
+        const timeStr = formatTime(now);
+        
+        startTimeHidden.value = timeStr;
+        stopTimeHidden.value = '';
+        
+        timeDisplay.value = `START: ${timeStr} | Duration: 00:00:00`;
+        timeDisplay.classList.add('recording');
+        
+        btnTimeControl.innerHTML = '<i class="fas fa-stop me-1"></i>STOP & SAVE';
+        btnTimeControl.classList.remove('btn-success');
+        btnTimeControl.classList.add('btn-danger', 'recording');
+        
+        timeStatus.innerHTML = '<span class="text-warning"><i class="fas fa-record-vinyl me-1"></i>Recording in progress...</span>';
+        
+        isRecording = true;
+        hasUnsavedData = true;
+        
+        // Start timer update
+        timerInterval = setInterval(updateTimer, 1000);
+        
+        // Add warning to page
+        const warningDiv = document.createElement('div');
+        warningDiv.id = 'recording-warning';
+        warningDiv.className = 'alert alert-warning mt-3';
+        warningDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><strong>ACTIVE RECORDING!</strong> The page cannot be closed until the STOP button is pressed.';
+        
+        const formContainer = document.getElementById('bevelingForm');
+        formContainer.insertBefore(warningDiv, formContainer.firstChild);
+        
+        history.pushState(null, null, location.href);
+        
+        checkFormReady();
+    }
+    
+    function updateTimer() {
+        if (!recordingStartTime) return;
+        
+        const now = new Date();
+        const elapsed = Math.floor((now - recordingStartTime) / 1000);
+        const startTimeStr = formatTime(recordingStartTime);
+        const durationStr = formatDuration(elapsed);
+        
+        timeDisplay.value = `START: ${startTimeStr} | Duration: ${durationStr}`;
+    }
+    
+    function stopRecording() {
+        if (!isFormReady) {
+            let missingFields = [];
+            
+            if (!startTimeHidden.value) missingFields.push("Start Time");
+            if (!document.getElementById("bjo_hidden").value) missingFields.push("BJO");
+            if (!document.getElementById("joint_hidden").value) missingFields.push("Joint Number");
+            if (!document.getElementById("job_operation").value) missingFields.push("Job Operation");
+            
+            alert("Please complete all required fields:\n- " + missingFields.join("\n- "));
+            return;
+        }
+        
+        const now = new Date();
+        const timeStr = formatTime(now);
+        
+        stopTimeHidden.value = timeStr;
+        
+        // Clear timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        
+        const elapsed = Math.floor((now - recordingStartTime) / 1000);
+        const durationStr = formatDuration(elapsed);
+        
+        timeDisplay.value = `COMPLETED | Duration: ${durationStr}`;
+        timeDisplay.classList.remove('recording');
+        
+        btnTimeControl.innerHTML = '<i class="fas fa-save me-1"></i>SAVING...';
+        btnTimeControl.disabled = true;
+        
+        timeStatus.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Saving data...</span>';
+        
+        hasUnsavedData = false;
+        isRecording = false;
+        
+        const warningDiv = document.getElementById('recording-warning');
+        if (warningDiv) {
+            warningDiv.remove();
+        }
+        
+        setTimeout(function() {
+            document.getElementById("bevelingForm").submit();
+        }, 100);
+    }
+    
+    btnTimeControl.addEventListener('click', function() {
+        if (!isRecording) {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+    });
+
+    function checkFormReady() {
+        const startTime = startTimeHidden.value;
+        const bjo = document.getElementById("bjo_hidden").value;
+        const jointNumber = document.getElementById("joint_hidden").value;
+        const jobOperation = document.getElementById("job_operation").value;
+        
+        // ✅ Check connector jika required
+        const connectorInput = document.getElementById("conn_number_input");
+        let connectorValid = true;
+        if (connectorInput && connectorInput.required) {
+            connectorValid = connectorInput.value.trim() !== '';
+        }
+        
+        isFormReady = startTime && bjo && jointNumber && jobOperation && connectorValid;
+        
+        return isFormReady;
+    }
+
+    document.getElementById("conn_number_input").addEventListener("input", function() {
+        // Hilangkan background hijau jika user mengedit manual
+        if (this.readOnly === false) {
+            this.style.backgroundColor = '';
+        }
+        checkFormReady();
+    });
+    console.log('Connector Number Logic loaded successfully');
+
+    // Check form readiness on input changes
+    document.getElementById("job_operation").addEventListener("input", checkFormReady);
+
+    // Validasi input Job Operation - hanya angka
+    document.getElementById("job_operation").addEventListener("input", function(e) {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        
+        if (this.value.length > 3) {
+            this.value = this.value.slice(0, 3);
+        }
+        
+        if (this.value === '') {
+            this.value = '0';
+        }
+        
+        checkFormReady();
+    });
+
+    document.getElementById("job_operation").addEventListener("blur", function() {
+        if (this.value === '' || this.value === null) {
+            this.value = '0';
+        }
+        checkFormReady();
+    });
+
+    // Searchable Select Class
+    class SearchableSelect {
+        constructor(containerSelector, options = {}) {
+            this.container = document.querySelector(containerSelector);
+            this.input = this.container.querySelector('.searchable-input');
+            this.dropdown = this.container.querySelector('.searchable-dropdown');
+            this.hiddenInput = this.container.querySelector('input[type="hidden"]');
+            
+            this.placeholder = options.placeholder || 'Type to search...';
+            this.onSelect = options.onSelect || function() {};
+            this.onReset = options.onReset || function() {};
+            this.originalItems = [];
+            this.selectedValue = '';
+            this.selectedText = '';
+            
+            this.init();
+        }
+        
+        init() {
+            this.originalItems = Array.from(this.dropdown.children).map(item => ({
+                element: item.cloneNode(true),
+                value: item.dataset.value,
+                text: item.textContent.trim().toLowerCase(),
+                process: item.dataset.process || '',
+                originalText: item.textContent.trim()
+            }));
+            
+            this.setupEvents();
+        }
+        
+        setupEvents() {
+            this.input.addEventListener('focus', () => {
+                if (this.selectedValue) {
+                    this.reset();
+                    this.showDropdown();
+                    this.onReset();
+                    return;
+                }
+                
+                if (this.input.value === this.input.placeholder) {
+                    this.input.value = '';
+                }
+                this.showDropdown();
+            });
+            
+            this.input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (this.input.value === '' && !this.selectedValue) {
+                        this.input.value = this.input.placeholder;
+                    }
+                }, 200);
+            });
+            
+            this.input.addEventListener('input', () => {
+                if (this.input.value !== this.input.placeholder) {
+                    this.filterItems();
+                }
+            });
+            
+            this.input.addEventListener('keydown', (e) => {
+                this.handleKeydown(e);
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!this.container.contains(e.target)) {
+                    this.hideDropdown();
+                }
+            });
+        }
+        
+        showDropdown() {
+            this.dropdown.style.display = 'block';
+            if (this.input.value === this.input.placeholder) {
+                this.input.value = '';
+            }
+            this.filterItems();
+        }
+        
+        hideDropdown() {
+            this.dropdown.style.display = 'none';
+            if (this.input.value === '' && !this.selectedValue) {
+                this.input.value = this.input.placeholder;
+            }
+        }
+        
+        filterItems() {
+            const searchTerm = this.input.value.toLowerCase().trim();
+            this.dropdown.innerHTML = '';
+            
+            let visibleCount = 0;
+            
+            this.originalItems.forEach(item => {
+                if (searchTerm === '' || item.text.includes(searchTerm)) {
+                    const clonedItem = item.element.cloneNode(true);
+                    clonedItem.addEventListener('click', () => {
+                        this.selectItem(item.value, item.originalText, item.process);
+                    });
+                    this.dropdown.appendChild(clonedItem);
+                    visibleCount++;
+                }
+            });
+            
+            if (visibleCount === 0 && searchTerm !== '') {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No results found';
+                this.dropdown.appendChild(noResults);
+            }
+        }
+        
+        selectItem(value, text, process = '') {
+            this.selectedValue = value;
+            this.selectedText = text;
+            this.input.value = text;
+            this.hiddenInput.value = value;
+            this.hideDropdown();
+            
+            this.input.style.backgroundColor = '#e8f5e8';
+            this.input.style.fontWeight = '500';
+            
+            this.onSelect(value, text, process);
+        }
+        
+        handleKeydown(e) {
+            const items = this.dropdown.querySelectorAll('.dropdown-item:not(.no-results)');
+            let selectedIndex = -1;
+            
+            items.forEach((item, index) => {
+                if (item.classList.contains('selected')) {
+                    selectedIndex = index;
+                }
+            });
+            
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex + 1) % items.length;
+                    this.highlightItem(items, selectedIndex);
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    selectedIndex = selectedIndex <= 0 ? items.length - 1 : selectedIndex - 1;
+                    this.highlightItem(items, selectedIndex);
+                    break;
+                    
+                case 'Enter':
+                    e.preventDefault();
+                    if (selectedIndex >= 0) {
+                        items[selectedIndex].click();
+                    }
+                    break;
+                    
+                case 'Escape':
+                    this.hideDropdown();
+                    break;
+            }
+        }
+        
+        highlightItem(items, index) {
+            items.forEach((item, i) => {
+                item.classList.toggle('selected', i === index);
+            });
+        }
+        
+        updateItems(newItems) {
+            this.dropdown.innerHTML = '';
+            this.originalItems = newItems.map(item => ({
+                element: this.createDropdownItem(item.value, item.text, item.process),
+                value: item.value,
+                text: item.text.toLowerCase(),
+                process: item.process || '',
+                originalText: item.text
+            }));
+            
+            this.originalItems.forEach(item => {
+                const clonedItem = item.element.cloneNode(true);
+                clonedItem.addEventListener('click', () => {
+                    this.selectItem(item.value, item.originalText, item.process);
+                });
+                this.dropdown.appendChild(clonedItem);
+            });
+        }
+        
+        createDropdownItem(value, text, process = '') {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.dataset.value = value;
+            item.dataset.process = process;
+            item.textContent = text;
+            return item;
+        }
+        
+        reset(placeholder = '') {
+            this.input.value = placeholder || this.placeholder;
+            this.input.placeholder = placeholder || this.placeholder;
+            this.input.style.backgroundColor = '';
+            this.input.style.fontWeight = '';
+            this.hiddenInput.value = '';
+            this.selectedValue = '';
+            this.selectedText = '';
+            this.hideDropdown();
+            
+            if (this.hiddenInput.hasAttribute('required')) {
+                checkFormReady();
+            }
+        }
+        
+        disable() {
+            this.input.disabled = true;
+            this.hideDropdown();
+        }
+        
+        enable() {
+            this.input.disabled = false;
+        }
+    }
+
+    // Function to reset all dependent fields when BJO changes
+    function resetDependentFields() {
+        jointSelect.reset("-- Please select BJO --");
+        jointSelect.disable();
+        
+        const ctInput = document.getElementById("ct_input");
+        const pbInput = document.getElementById("pb_input");
+        ctInput.value = '';
+        ctInput.style.backgroundColor = '';
+        ctInput.title = '';
+        pbInput.value = '';
+        pbInput.style.backgroundColor = '';
+        pbInput.title = '';
+        
+        const jointLabel = document.getElementById("joint_label");
+        const jointTypeInfo = document.getElementById("joint_type_info");
+        jointLabel.textContent = "Joint Number";
+        jointTypeInfo.textContent = "Type: PIPE Joint";
+        jointTypeInfo.className = "text-muted";
+        
+        // ✅ TAMBAHAN: Reset connector field
+        hideConnectorField();
+        
+        jointData = [];
+        
+        checkFormReady();
+    }
+
+    // Initialize BJO searchable select
+    const bjoSelect = new SearchableSelect('#bjo_searchable', {
+        placeholder: 'Type to search BJO...',
+        onSelect: function(value, text, process) {
+            handleBjoChange(value, text, process);
+            checkFormReady();
+        },
+        onReset: function() {
+            resetDependentFields();
+        }
+    });
+
+    // Initialize Joint Number searchable select
+    const jointSelect = new SearchableSelect('#joint_searchable', {
+        placeholder: 'Select BJO first...',
+        onSelect: function(value, text) {
+            handleJointChange(value, text);
+            checkFormReady();
+        }
+    });
+
+    function handleBjoChange(bjoId, bjoText, processType) {
+        const ctInput = document.getElementById("ct_input");
+        const pbInput = document.getElementById("pb_input");
+        const jointLabel = document.getElementById("joint_label");
+        const jointTypeInfo = document.getElementById("joint_type_info");
+
+        jointLabel.textContent = "Joint Number";
+        jointTypeInfo.textContent = "Type: Loading...";
+        jointTypeInfo.className = "text-muted";
+
+        jointSelect.reset("Loading...");
+        jointSelect.disable();
+
+        ctInput.value = '';
+        pbInput.value = '';
+        
+        // ✅ TAMBAHAN: Check connector requirement
+        checkConnectorRequirement(bjoId);
+
+        if (bjoId) {
+            fetch(`{% url 'get_joint_numbers' %}?bjo_id=${bjoId}`)
+                .then(res => res.json())
+                .then(data => {
+                    jointData = data.joint_numbers;
+                    
+                    if (jointData.length > 0) {
+                        const firstItem = jointData[0];
+                        jointLabel.textContent = "Joint Number";
+                        jointTypeInfo.textContent = "Type: PIPE Joint";
+                        jointTypeInfo.className = "text-success";
+                        
+                        const jointItems = [
+                            { value: '', text: '-- Select Number --' },
+                            ...jointData.map(j => ({
+                                value: j.joint_number,
+                                text: j.joint_number,
+                                type: j.type,
+                            }))
+                        ];
+                        
+                        jointSelect.updateItems(jointItems);
+                        jointSelect.reset("Type to search number...");
+                        jointSelect.enable();
+                    } else {
+                        jointSelect.updateItems([
+                            { value: '', text: 'No numbers available or none ready to be beveled yet.' }
+                        ]);
+                        jointSelect.reset("No data available");
+                        jointSelect.disable();
+                        
+                        jointLabel.textContent = "Joint Number";
+                        jointTypeInfo.textContent = "Type: PIPE Joint (No Data)";
+                        jointTypeInfo.className = "text-warning";
+                    }
+                    checkFormReady();
+                })
+                .catch(err => {
+                    console.error('Error loading joint numbers:', err);
+                    jointSelect.updateItems([
+                        { value: '', text: 'Error loading data' }
+                    ]);
+                    jointSelect.disable();
+                    checkFormReady();
+                });
+
+            // Load CT/PB values
+            fetch(`{% url 'get_ct_pb_values' %}?bjo_id=${bjoId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ct !== null) {
+                        ctInput.value = data.ct;
+                        ctInput.style.backgroundColor = '#e8f5e8';
+                    } else {
+                        ctInput.style.backgroundColor = '';
+                    }
+                    
+                    if (data.pb !== null) {
+                        pbInput.value = data.pb;
+                        pbInput.style.backgroundColor = '#e8f5e8';
+                    } else {
+                        pbInput.style.backgroundColor = '';
+                    }
+
+                    if (data.bjo_info) {
+                        const infoText = `Size: ${data.bjo_info.size || 'N/A'}, Grade: ${data.bjo_info.grade || 'N/A'}, Process: ${data.bjo_info.process || 'N/A'}`;
+                        ctInput.title = `Auto-filled based on: ${infoText}`;
+                        pbInput.title = `Auto-filled based on: ${infoText}`;
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading CT/PB values:', err);
+                });
+
+        } else {
+            resetDependentFields();
+        }
+    }
+
+    function handleJointChange(selectedJoint, jointText) {
+        const jointTypeInfo = document.getElementById("joint_type_info");
+
+        if (selectedJoint) {
+            const jointItem = jointData.find(j => j.joint_number === selectedJoint);
+            
+            if (jointItem) {
+                const infoTag = jointItem.info_tag || null;
+
+                // Update display dengan info tag badge
+                let displayText = `Selected: PIPE Joint - ${selectedJoint}`;
+                if (infoTag) {
+                    displayText += ` <span class="badge bg-warning text-dark">${infoTag}</span>`;
+                }
+                jointTypeInfo.innerHTML = displayText;
+                jointTypeInfo.className = "text-success";
+                
+                // ✅ TAMBAHAN: Check existing connector
+                const bjoId = document.getElementById('bjo_hidden').value;
+                checkExistingConnector(bjoId, selectedJoint);
+            }
+        } else {
+            const bjoHidden = document.getElementById("bjo_hidden");
+            if (bjoHidden.value) {
+                jointTypeInfo.textContent = "Type: PIPE Joint";
+                jointTypeInfo.className = "text-success";
+            } else {
+                jointTypeInfo.textContent = "Type: Auto-detect";
+                jointTypeInfo.className = "text-muted";
+            }
+            
+            // ✅ TAMBAHAN: Hide connector field jika joint tidak dipilih
+            hideConnectorField();
+        }
+        checkFormReady();
+    }
+
+    // Handle manual CT/PB input
+    document.getElementById("ct_input").addEventListener("input", function() {
+        this.style.backgroundColor = '';
+        this.title = 'CT values have been manually edited';
+    });
+
+    document.getElementById("pb_input").addEventListener("input", function() {
+        this.style.backgroundColor = '';
+        this.title = 'PB values have been manually edited';
+    });
+
+    // ===== TIME EDIT MODAL FUNCTIONALITY =====
+    
+    function calculateStopTime() {
+        const startTimeInput = document.getElementById('edit_time_start_time');
+        const durationInput = document.getElementById('edit_time_duration');
+        const stopPreview = document.getElementById('edit_time_stop_preview');
+        
+        const startTime = startTimeInput.value;
+        const duration = parseFloat(durationInput.value);
+        
+        if (startTime && duration > 0) {
+            try {
+                const [hours, minutes] = startTime.split(':').map(Number);
+                const startDate = new Date();
+                startDate.setHours(hours, minutes, 0, 0);
+                const stopDate = new Date(startDate.getTime() + (duration * 60 * 60 * 1000));
+                const stopHours = stopDate.getHours().toString().padStart(2, '0');
+                const stopMinutes = stopDate.getMinutes().toString().padStart(2, '0');
+                const stopTimeStr = `${stopHours}:${stopMinutes}`;
+                
+                stopPreview.value = stopTimeStr;
+                stopPreview.style.color = '#28a745';
+                stopPreview.style.fontWeight = '500';
+                
+                if (stopDate.getDate() !== startDate.getDate()) {
+                    stopPreview.value += ' (+1 day)';
+                    stopPreview.style.color = '#fd7e14';
+                }
+                
+            } catch (error) {
+                stopPreview.value = 'Error in calculation';
+                stopPreview.style.color = '#dc3545';
+            }
+        } else {
+            stopPreview.value = '';
+            stopPreview.style.color = '';
+            stopPreview.style.fontWeight = '';
+        }
+    }
+
+    const startTimeInput = document.getElementById('edit_time_start_time');
+    const durationInput = document.getElementById('edit_time_duration');
+    
+    if (startTimeInput && durationInput) {
+        startTimeInput.addEventListener('change', calculateStopTime);
+        durationInput.addEventListener('input', calculateStopTime);
+    }
+    
+    // Handle Time Edit Button Click
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.edit-time-btn')) {
+            const btn = e.target.closest('.edit-time-btn');
+            const data = btn.dataset;
+            
+            document.getElementById('edit_time_detail_id').value = data.id;
+            document.getElementById('edit_time_start_time').value = data.start;
+            
+            const startTime = data.start;
+            const stopTime = data.stop;
+            
+            if (startTime && stopTime) {
+                try {
+                    const [startHours, startMinutes] = startTime.split(':').map(Number);
+                    const [stopHours, stopMinutes] = stopTime.split(':').map(Number);
+                    
+                    let startTotalMinutes = startHours * 60 + startMinutes;
+                    let stopTotalMinutes = stopHours * 60 + stopMinutes;
+                    
+                    if (stopTotalMinutes < startTotalMinutes) {
+                        stopTotalMinutes += 24 * 60;
+                    }
+                    
+                    const durationMinutes = stopTotalMinutes - startTotalMinutes;
+                    const durationHours = (durationMinutes / 60).toFixed(1);
+                    
+                    document.getElementById('edit_time_duration').value = durationHours;
+                } catch (error) {
+                    document.getElementById('edit_time_duration').value = '1.0';
+                }
+            } else {
+                document.getElementById('edit_time_duration').value = '1.0';
+            }
+            
+            document.getElementById('edit_time_bjo_info').textContent = data.bjoText || '-';
+            document.getElementById('edit_time_joint_info').textContent = data.joint || '-';
+            document.getElementById('edit_time_jobop_info').textContent = data.jobop || '-';
+            
+            calculateStopTime();
+            
+            const editTimeModal = new bootstrap.Modal(document.getElementById('editTimeModal'));
+            editTimeModal.show();
+        }
+    });
+    
+    if (durationInput) {
+        durationInput.addEventListener('input', function() {
+            let value = parseFloat(this.value);
+            if (value > 16) {
+                this.value = '16.0';
+                this.style.borderColor = '#fd7e14';
+                setTimeout(() => {
+                    this.style.borderColor = '';
+                }, 2000);
+            } else if (value < 0.1 && this.value !== '') {
+                this.value = '0.1';
+                this.style.borderColor = '#fd7e14';
+                setTimeout(() => {
+                    this.style.borderColor = '';
+                }, 2000);
+            }
+            calculateStopTime();
+        });
+    }
+
+    // Handle Edit Button Click
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.edit-btn')) {
+            const btn = e.target.closest('.edit-btn');
+            const data = btn.dataset;
+            
+            // Populate form fields
+            document.getElementById('edit_detail_id').value = data.id;
+            document.getElementById('edit_start_time').value = data.start;
+            document.getElementById('edit_stop_time').value = data.stop;
+            document.getElementById('edit_bjo_display').value = data.bjoText;
+            document.getElementById('edit_bjo_id').value = data.bjo;
+            document.getElementById('edit_joint_number').value = data.joint;
+            document.getElementById('edit_job_operation').value = data.jobop;
+            document.getElementById('edit_conn_number').value = data.connNo || '-';  // ← TAMBAHKAN BARIS INI
+            document.getElementById('edit_ct').value = data.ct;
+            document.getElementById('edit_pb').value = data.pb || '';
+            document.getElementById('edit_comment').value = data.comment;
+            
+            // Set uncompleted checkbox status
+            const isUncompleted = data.uncompleted === 'True' || data.uncompleted === 'true';
+            document.getElementById('edit_is_uncompleted').checked = isUncompleted;
+            
+            // Update alert visual based on initial state
+            const alertDiv = document.getElementById('edit_uncompleted_alert');
+            if (isUncompleted) {
+                alertDiv.classList.remove('alert-info');
+                alertDiv.classList.add('alert-warning');
+                alertDiv.querySelector('strong').textContent = 'Status: UNCOMPLETED';
+            } else {
+                alertDiv.classList.remove('alert-warning');
+                alertDiv.classList.add('alert-info');
+                alertDiv.querySelector('strong').textContent = 'Uncompleted Status:';
+            }
+            
+            // Show modal
+            const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+            editModal.show();
+        }
+    });
+
+    // Validasi Job Operation di modal edit
+    document.getElementById("edit_job_operation").addEventListener("input", function(e) {
+        this.value = this.value.replace(/[^a-zA-Z0-9]/g, '');
+        if (this.value.length > 3) {
+            this.value = this.value.slice(0, 3);
+        }
+    });
+
+    document.getElementById("edit_job_operation").addEventListener("blur", function() {
+        if (this.value === '' || this.value === null) {
+            this.value = '0';
+        }
+    });
+
+    document.getElementById("edit_is_uncompleted").addEventListener("change", function() {
+        const alertDiv = document.getElementById('edit_uncompleted_alert');
+        if (this.checked) {
+            alertDiv.classList.remove('alert-info');
+            alertDiv.classList.add('alert-warning');
+            alertDiv.querySelector('strong').textContent = 'Status: UNCOMPLETED';
+        } else {
+            alertDiv.classList.remove('alert-warning');
+            alertDiv.classList.add('alert-info');
+            alertDiv.querySelector('strong').textContent = 'Uncompleted Status:';
+        }
+    });
+
+    // ===== PAGE LEAVE PREVENTION =====
+
+    function preventPageLeave(e) {
+        if (hasUnsavedData || isRecording) {
+            const message = 'You are currently recording. The start time data will be lost if you leave the page. Be sure to press the STOP & SAVE button first.';
+            
+            e.preventDefault();
+            e.returnValue = message;
+            
+            return message;
+        }
+    }
+
+    function preventBackButton() {
+        if (hasUnsavedData || isRecording) {
+            history.pushState(null, null, location.href);
+            
+            alert('You are currently recording. Please press the STOP & SAVE button before leaving the page.');
+            
+            return false;
+        }
+    }
+
+    window.addEventListener('beforeunload', preventPageLeave);
+
+    window.addEventListener('popstate', function(e) {
+        if (hasUnsavedData || isRecording) {
+            history.pushState(null, null, location.href);
+            
+            setTimeout(() => {
+                alert('You are currently recording. Please press the STOP & SAVE button before leaving the page.');
+            }, 10);
+        }
+    });
+
+    // Link navigation prevention
+    const backButton = document.querySelector('a[href*="bevel_list"]');
+    if (backButton) {
+        backButton.addEventListener('click', function(e) {
+            if (hasUnsavedData || isRecording) {
+                e.preventDefault();
+                
+                const confirmMessage = 'You are currently recording. The start time data will be lost.\n\nAre you sure you want to leave this page?';
+                
+                if (confirm(confirmMessage)) {
+                    hasUnsavedData = false;
+                    isRecording = false;
+                    
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                    }
+                    
+                    window.location.href = this.href;
+                }
+            }
+        });
+    }
+
+    const allLinks = document.querySelectorAll('a:not([href^="#"]):not([target="_blank"])');
+    allLinks.forEach(link => {
+        if (link.getAttribute('href') && link.getAttribute('href').includes('bevel_list')) {
+            return;
+        }
+        
+        link.addEventListener('click', function(e) {
+            if (hasUnsavedData || isRecording) {
+                e.preventDefault();
+                
+                const confirmMessage = 'You are currently recording. The start time data will be lost.\n\nAre you sure you want to leave this page?';
+                
+                if (confirm(confirmMessage)) {
+                    hasUnsavedData = false;
+                    isRecording = false;
+                    
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                    }
+                    
+                    window.location.href = this.href;
+                }
+            }
+        });
+    });
+
+    // Handle Delete Button Click
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-btn')) {
+            const btn = e.target.closest('.delete-btn');
+            const detailId = btn.dataset.id;
+            const jointNumber = btn.dataset.joint;
+            const bjoNumber = btn.dataset.bjo;
+            
+            document.getElementById('delete_detail_id').value = detailId;
+            document.getElementById('delete_bjo_info').textContent = bjoNumber;
+            document.getElementById('delete_joint_info').textContent = jointNumber;
+            
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+    });
+
+    // Update page title when recording
+    function updatePageTitle() {
+        const originalTitle = document.title.replace(' - RECORDING', '');
+        
+        if (isRecording) {
+            document.title = originalTitle + ' - RECORDING';
+        } else {
+            document.title = originalTitle;
+        }
+    }
+
+    // Periodic check for recording status
+    setInterval(() => {
+        updatePageTitle();
+    }, 1000);
+
+    // ===== CT/PB VALIDATION BEFORE FINALIZE =====
+    window.validateCTPBBeforeFinalize = function() {
+        const detailRows = document.querySelectorAll('tbody tr');
+        const missingCTDetails = [];
+        const missingPBDetails = [];
+        
+        detailRows.forEach((row, index) => {
+            // Skip empty rows
+            if (row.querySelector('td[colspan]')) {
+                return;
+            }
+            
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 13) return;
+            
+            // CT is in column index 8 (9th column)
+            const ctCell = cells[8];
+            const ctValue = ctCell.textContent.trim();
+            
+            // PB is in column index 9 (10th column)
+            const pbCell = cells[9];
+            const pbValue = pbCell.textContent.trim();
+            
+            // Get detail info for error message
+            const bjoCell = cells[4];
+            const bjo = bjoCell.querySelector('strong') ? bjoCell.querySelector('strong').textContent.trim() : bjoCell.textContent.trim();
+            
+            const jointCell = cells[5];
+            const jointNumber = jointCell.querySelector('strong') ? jointCell.querySelector('strong').textContent.trim() : jointCell.textContent.trim();
+            
+            const jobOpCell = cells[6];
+            const jobOp = jobOpCell.textContent.trim();
+            
+            // Check CT
+            if (ctValue === '-' || ctValue === '' || ctValue === '0' || ctValue === '0.00') {
+                missingCTDetails.push({
+                    no: index + 1,
+                    bjo: bjo,
+                    jointNumber: jointNumber,
+                    jobOp: jobOp
+                });
+            }
+            
+            // Check PB
+            if (pbValue === '-' || pbValue === '' || pbValue === '0' || pbValue === '0.00') {
+                missingPBDetails.push({
+                    no: index + 1,
+                    bjo: bjo,
+                    jointNumber: jointNumber,
+                    jobOp: jobOp
+                });
+            }
+        });
+        
+        return {
+            missingCT: missingCTDetails,
+            missingPB: missingPBDetails
+        };
+    };
+
+    window.scrollToFirstMissingCTPB = function() {
+        const detailRows = document.querySelectorAll('tbody tr');
+        
+        for (let row of detailRows) {
+            if (row.querySelector('td[colspan]')) continue;
+            
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 13) continue;
+            
+            const ctCell = cells[8];
+            const ctValue = ctCell.textContent.trim();
+            
+            const pbCell = cells[9];
+            const pbValue = pbCell.textContent.trim();
+            
+            if ((ctValue === '-' || ctValue === '' || ctValue === '0' || ctValue === '0.00') ||
+                (pbValue === '-' || pbValue === '' || pbValue === '0' || pbValue === '0.00')) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                row.style.backgroundColor = '#fff3cd';
+                row.style.transition = 'background-color 0.3s ease';
+                
+                setTimeout(() => {
+                    row.style.backgroundColor = '';
+                }, 2000);
+                
+                break;
+            }
+        }
+    };
+
+    // Attach CT/PB validation to finish button
+    const finishButtons = document.querySelectorAll('a[href*="final"]');
+    console.log('CT/PB Validation: Found finish buttons:', finishButtons.length);
+    finishButtons.forEach(function(finishButton) {
+        finishButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('CT/PB Validation: Checking before finalize...');
+            const validationResult = window.validateCTPBBeforeFinalize();
+            
+            console.log('CT/PB Validation: Missing CT count =', validationResult.missingCT.length);
+            console.log('CT/PB Validation: Missing PB count =', validationResult.missingPB.length);
+            
+            if (validationResult.missingCT.length > 0 || validationResult.missingPB.length > 0) {
+                let modalContent = '';
+                
+                // CT Missing Details
+                if (validationResult.missingCT.length > 0) {
+                    let ctDetailList = '<ul class="text-start mb-3" style="max-height: 200px; overflow-y: auto;">';
+                    validationResult.missingCT.forEach(detail => {
+                        ctDetailList += `
+                            <li class="mb-2">
+                                <strong>Detail #${detail.no}</strong><br>
+                                <small>
+                                    BJO: <span class="badge bg-primary">${detail.bjo}</span> | 
+                                    Joint: <span class="badge bg-info">${detail.jointNumber}</span> | 
+                                    Job Op: <span class="badge bg-secondary">${detail.jobOp}</span>
+                                </small>
+                            </li>
+                        `;
+                    });
+                    ctDetailList += '</ul>';
+                    
+                    modalContent += `
+                        <div class="alert alert-warning mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Warning!</strong> There are <strong>${validationResult.missingCT.length}</strong> details without CT values.
+                        </div>
+                        <h6 class="mb-2"><strong>Details without CT:</strong></h6>
+                        ${ctDetailList}
+                    `;
+                }
+                
+                // PB Missing Details
+                if (validationResult.missingPB.length > 0) {
+                    let pbDetailList = '<ul class="text-start mb-3" style="max-height: 200px; overflow-y: auto;">';
+                    validationResult.missingPB.forEach(detail => {
+                        pbDetailList += `
+                            <li class="mb-2">
+                                <strong>Detail #${detail.no}</strong><br>
+                                <small>
+                                    BJO: <span class="badge bg-primary">${detail.bjo}</span> | 
+                                    Joint: <span class="badge bg-info">${detail.jointNumber}</span> | 
+                                    Job Op: <span class="badge bg-secondary">${detail.jobOp}</span>
+                                </small>
+                            </li>
+                        `;
+                    });
+                    pbDetailList += '</ul>';
+                    
+                    modalContent += `
+                        <div class="alert alert-warning mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Warning!</strong> There are <strong>${validationResult.missingPB.length}</strong> details without PB values.
+                        </div>
+                        <h6 class="mb-2"><strong>Details without PB:</strong></h6>
+                        ${pbDetailList}
+                    `;
+                }
+                
+                const modalHTML = `
+                    <div class="modal fade" id="ctpbValidationModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-dark">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Details Missing CT/PB Values
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    ${modalContent}
+                                    <div class="alert alert-info mb-0">
+                                        <i class="fas fa-lightbulb me-2"></i>
+                                        <small><strong>Please input CT/PB values first</strong> before finishing this record. Use the <strong>Edit</strong> (yellow) button to fill in CT/PB values.</small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                        <i class="fas fa-times me-1"></i>Close
+                                    </button>
+                                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="scrollToFirstMissingCTPB()">
+                                        <i class="fas fa-arrow-down me-1"></i>View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Remove existing modal if present
+                const existingModal = document.getElementById('ctpbValidationModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+                
+                // Add new modal to body
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                
+                // Show modal
+                const ctpbModal = new bootstrap.Modal(document.getElementById('ctpbValidationModal'));
+                ctpbModal.show();
+                
+                // Clean up modal after it's hidden
+                document.getElementById('ctpbValidationModal').addEventListener('hidden.bs.modal', function () {
+                    this.remove();
+                });
+                
+            } else {
+                console.log('CT/PB Validation: All CT/PB filled, proceeding...');
+                window.location.href = this.href;
+            }
+        });
+    });
+
+    console.log('CT/PB Validation Script loaded successfully');
+    console.log('Dynamic Time Control Script loaded successfully');
+});
+
+// ===== CONNECTOR NUMBER LOGIC =====
+function checkConnectorRequirement(bjoId) {
+    if (!bjoId) {
+        hideConnectorField();
+        return;
+    }
+    
+    // Ambil data BJO yang dipilih
+    fetch(`{% url 'bevel_get_connector_info' %}?bjo_id=${bjoId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Connector requirement check:', data);
+            if (data.requires_connector) {
+                showConnectorField();
+            } else {
+                hideConnectorField();
+            }
+        })
+        .catch(error => {
+            console.error('Error checking connector requirement:', error);
+            hideConnectorField();
+        });
+}
+
+function showConnectorField() {
+    const connectorWrapper = document.getElementById('connector_field_wrapper');
+    const connectorInput = document.getElementById('conn_number_input');
+    const connRequired = document.getElementById('conn_required');
+    
+    if (connectorWrapper) {
+        connectorWrapper.style.display = 'block';
+        connectorInput.required = true;
+        if (connRequired) connRequired.style.display = 'inline';
+        console.log('Connector field shown');
+    }
+}
+
+function hideConnectorField() {
+    const connectorWrapper = document.getElementById('connector_field_wrapper');
+    const connectorInput = document.getElementById('conn_number_input');
+    const connRequired = document.getElementById('conn_required');
+    
+    if (connectorWrapper) {
+        connectorWrapper.style.display = 'none';
+        connectorInput.required = false;
+        connectorInput.value = '';
+        if (connRequired) connRequired.style.display = 'none';
+        console.log('Connector field hidden');
+    }
+}
+
+function checkExistingConnector(bjoId, jointNumber) {
+    if (!bjoId || !jointNumber) return;
+    
+    const connectorInput = document.getElementById('conn_number_input');
+    if (!connectorInput || !connectorInput.required) return;
+    
+    // Cek apakah connector sudah ada untuk joint ini
+    fetch(`{% url 'bevel_get_connector_number' %}?bjo_id=${bjoId}&joint_number=${jointNumber}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Existing connector check:', data);
+            if (data.conn_number) {
+                // Connector sudah ada, auto-fill
+                connectorInput.value = data.conn_number;
+                connectorInput.style.backgroundColor = '#e8f5e8';
+                connectorInput.readOnly = true;
+                
+                const wrapper = document.getElementById('connector_field_wrapper');
+                const small = wrapper.querySelector('small');
+                if (small) {
+                    small.textContent = 'Connector already exists (auto-filled)';
+                    small.classList.remove('text-muted');
+                    small.classList.add('text-success');
+                }
+            } else {
+                // Connector belum ada, user harus input
+                connectorInput.value = '';
+                connectorInput.style.backgroundColor = '';
+                connectorInput.readOnly = false;
+                
+                const wrapper = document.getElementById('connector_field_wrapper');
+                const small = wrapper.querySelector('small');
+                if (small) {
+                    small.textContent = 'Required for XLW-S, XLW-GT, XLW';
+                    small.classList.remove('text-success');
+                    small.classList.add('text-muted');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error checking existing connector:', error);
+            connectorInput.value = '';
+            connectorInput.style.backgroundColor = '';
+            connectorInput.readOnly = false;
+        });
+}
+
+console.log('Connector Number Logic loaded successfully');
+</script>
+{% endblock %}

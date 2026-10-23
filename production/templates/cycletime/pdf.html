@@ -1,0 +1,378 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan CYCLE TIME</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            margin: 40px;
+            color: #333;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 15px;
+        }
+
+        .company-info h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c5282;
+            margin: 0;
+        }
+
+        .header-date {
+            font-size: 10pt;
+            text-align: right;
+            background-color: #f7fafc;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .header-date p {
+            margin: 0;
+        }
+
+        .main-title {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c5282;
+            margin-top: 25px;
+            margin-bottom: 3px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 10pt;
+            font-style: italic;
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        /* Filter info styling */
+        .filter-info {
+            background-color: #e6f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+
+        .filter-info h3 {
+            margin: 0 0 8px 0;
+            font-size: 10pt;
+            color: #2c5282;
+        }
+
+        .filter-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .filter-badge {
+            background-color: #2c5282;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+
+
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 8pt;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 4px 3px;
+            text-align: center;
+            vertical-align: middle;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            font-size: 7pt;
+        }
+
+        /* OPTIMIZED COLUMN WIDTHS */
+        .col-no { width: 30px; }           /* No - fixed small width */
+        .col-process-detail { width: 300px; } /* Process Detail - VERY LARGE for combined info */
+        .col-od { width: 60px; }           /* OD - small */
+        .col-grade { width: 80px; }        /* Grade - medium */
+        .col-hours { width: 50px; }        /* Hours - small */
+        .col-cost { width: 60px; }         /* Cost - small */
+        .col-status { width: 70px; }       /* Status - medium */
+        .col-info { width: 120px; }        /* Info - medium */
+
+        /* Process detail column styling - left aligned with tight spacing */
+        .col-process-detail {
+            text-align: left;
+            font-size: 6.5pt;
+            line-height: 1.0;
+            padding: 2px 3px;
+            vertical-align: top;
+        }
+
+        /* Process detail styling - VERY TIGHT SPACING */
+        .process-detail {
+            margin: 0;
+            padding: 0;
+            line-height: 1.0;
+        }
+
+        .process-detail:last-child {
+            margin-bottom: 0;
+        }
+
+        .process-label {
+            font-weight: bold;
+            color: #2c5282;
+            display: inline-block;
+            min-width: 35px;
+            margin-right: 2px;
+        }
+
+        .process-value {
+            font-weight: bold;
+        }
+
+        .process-name {
+            font-weight: bold;
+            color: #d53f8c;
+            font-size: 7pt;
+        }
+
+        .process-rate {
+            color: #2d3748;
+        }
+
+        /* Status badge styling */
+        .status-badge {
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 6pt;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .status-sesuai {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-outdated {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        /* Row styling for outdated items */
+        .row-outdated {
+            background-color: #fff3cd !important;
+        }
+
+        /* Number columns - smaller font */
+        .col-no, .col-hours, .col-cost {
+            font-size: 7pt;
+        }
+
+        /* Other columns - smaller font */
+        .col-od, .col-grade {
+            font-size: 6.5pt;
+        }
+
+        /* Info column */
+        .col-info {
+            font-size: 6pt;
+            text-align: left;
+            padding: 2px;
+        }
+
+        @media print {
+            body {
+                margin: 15px;
+                font-size: 9pt;
+            }
+
+            table {
+                font-size: 6pt;
+            }
+
+            th, td {
+                padding: 2px 1px;
+            }
+
+            .col-process-detail {
+                font-size: 5.5pt;
+                padding: 1px 2px;
+                line-height: 0.9;
+            }
+
+            .process-detail {
+                margin: 0;
+                padding: 0;
+                line-height: 0.9;
+            }
+
+            .process-name {
+                font-size: 6pt;
+            }
+
+            .filter-info {
+                font-size: 8pt;
+            }
+
+            .filter-badge {
+                font-size: 7pt;
+            }
+
+            .status-badge {
+                font-size: 5pt;
+            }
+
+
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-size: 9pt;
+            text-align: right;
+            color: #777;
+            border-top: 1px dashed #aaa;
+            padding-top: 8px;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f8ff;
+        }
+
+        .no-data {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+            padding: 40px;
+            font-size: 12pt;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header tanpa logo -->
+    <div class="header-top">
+        <div class="company-info">
+            <h1>PT. H-Tech Oil Field Equipment</h1>
+        </div>
+        <div class="header-date">
+            <p><strong>Tanggal Cetak:</strong><br>{{ today|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+
+    <!-- Judul -->
+    <div class="main-title">LAPORAN CYCLE TIME</div>
+    <div class="subtitle">
+        {% if has_filters %}
+            Daftar Cycle Time berdasarkan filter yang dipilih
+        {% else %}
+            Daftar Cycle Time yang telah terdaftar dalam sistem
+        {% endif %}
+    </div>
+
+    <!-- Info Filter Aktif -->
+    {% if has_filters %}
+    <div class="filter-info">
+        <h3>Filter yang Diterapkan:</h3>
+        <div class="filter-badges">
+            {% for filter in filter_info %}
+                <span class="filter-badge">{{ filter }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+
+
+    <!-- Tabel -->
+    {% if cycle_times %}
+    <table>
+        <thead>
+            <tr>
+                <th class="col-no">No</th>
+                <th class="col-process-detail">Process Detail</th>
+                <th class="col-od">OD</th>
+                <th class="col-grade">Grade</th>
+                <th class="col-hours">Hours</th>
+                <th class="col-cost">Cost</th>
+                <th class="col-status">Status</th>
+                <th class="col-info">Info Product</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ct in cycle_times %}
+            <tr {% if ct.is_outdated %}class="row-outdated"{% endif %}>
+                <td class="col-no">{{ forloop.counter }}</td>
+                <td class="col-process-detail">
+                    <div class="process-detail">
+                        <span class="process-label process-name">PROCESS:</span> <span class="process-value">{{ ct.process_type.name }}</span>
+                    </div>
+                    <div class="process-detail">
+                        <span class="process-label process-rate">RATE:</span> <span class="process-value">{{ ct.process_type.rate|floatformat:2 }}/hour</span>
+                    </div>
+                </td>
+                <td class="col-od">{{ ct.od_thickness }}</td>
+                <td class="col-grade">{{ ct.ct_for }}</td>
+                <td class="col-hours">{{ ct.hours|floatformat:2 }}</td>
+                <td class="col-cost">{{ ct.cost|floatformat:2 }}</td>
+                <td class="col-status">
+                    <span class="status-badge {% if ct.is_outdated %}status-outdated{% else %}status-sesuai{% endif %}">
+                        {% if ct.is_outdated %}Update{% else %}Sesuai{% endif %}
+                    </span>
+                </td>
+                <td class="col-info">{{ ct.info_product|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-data">
+        {% if has_filters %}
+            Tidak ada data dengan filter yang dipilih.
+        {% else %}
+            Tidak ada data tersedia.
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Dokumen ini dihasilkan secara otomatis oleh sistem.</p>
+        {% if has_filters %}
+        <p>Total data yang ditampilkan: {{ cycle_times|length }} record</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>

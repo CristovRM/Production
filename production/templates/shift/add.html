@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Add new shift{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">Tambah Shift</div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="name" class="form-label">Nama Shift</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Remarks</label>
+                    <textarea name="remarks" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Simpan</button>
+                <a href="{% url 'shift_list' %}" class="btn btn-secondary">Kembali</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

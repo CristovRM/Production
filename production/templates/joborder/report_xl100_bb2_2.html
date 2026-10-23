@@ -1,0 +1,208 @@
+{% extends 'joborder/report_xl100_wbase.html' %}
+
+{% block extra_style %}
+<style>
+    /* Override untuk BB-2.2: tabel lebih compact */
+    .tracking-table {
+        font-size: 9px;
+    }
+    
+    .row-number {
+        width: 25px;
+        font-size: 8px;
+    }
+    
+    .joint-col {
+        width: 50px;
+        font-size: 9px;
+    }
+    
+    .date-col {
+        width: 65px;
+        font-size: 8px;
+    }
+    
+    .welder-col {
+        width: 70px;
+        font-size: 8px;
+    }
+    
+    .protector-col {
+        width: 55px;
+        font-size: 8px;
+    }
+    
+    .bevel-col {
+        width: 60px;
+        font-size: 8px;
+    }
+    
+    .grind-col {
+        width: 60px;
+        font-size: 8px;
+    }
+    
+    .tally-col {
+        width: 50px;
+        font-size: 8px;
+    }
+    
+    .header-row th {
+        font-size: 8px;
+        padding: 4px 2px;
+        line-height: 1.1;
+    }
+    
+    .data-row td {
+        padding: 4px 2px;
+        font-size: 8px;
+    }
+    
+    /* Toggle Buttons Container */
+    .toggle-container {
+        position: fixed;
+        top: 50px;
+        right: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 1000;
+    }
+    
+    /* Hide toggle buttons when printing */
+    @media print {
+        .toggle-container {
+            display: none !important;
+        }
+    }
+    
+    .toggle-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 12px;
+        transition: background 0.3s;
+        min-width: 150px;
+        font-weight: 500;
+    }
+    
+    .toggle-btn:hover {
+        background: #218838;
+    }
+    
+    .toggle-btn.inactive {
+        background: #6c757d;
+    }
+    
+    .toggle-btn.inactive:hover {
+        background: #5a6268;
+    }
+    
+    /* Hide Pin Section columns */
+    .hide-pin-section .pin-date-col,
+    .hide-pin-section .pin-welder-col,
+    .hide-pin-section .pin-side-col {
+        display: none;
+    }
+    
+    /* Hide Box Section columns */
+    .hide-box-section .box-date-col,
+    .hide-box-section .box-welder-col,
+    .hide-box-section .box-side-col {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block table_content %}
+<div class="toggle-container no-print">
+    <button class="toggle-btn" id="togglePin" onclick="toggleColumn('pin')">Hide Pin Section</button>
+    <button class="toggle-btn" id="toggleBox" onclick="toggleColumn('box')">Hide Box Section</button>
+</div>
+
+<table class="tracking-table" id="mainTable">
+    <thead>
+        <tr class="header-row">
+            <th rowspan="2" class="row-number">#</th>
+            <th rowspan="2" class="joint-col">Joint #</th>
+            <th rowspan="2" class="date-col pin-date-col">Date</th>
+            <th rowspan="2" class="welder-col pin-welder-col">Welder</th>
+            <th colspan="1" class="pin-side-col">Scan Oper #</th>
+            <th rowspan="2" class="date-col box-date-col">Date</th>
+            <th rowspan="2" class="welder-col box-welder-col">Welder</th>
+            <th colspan="1" class="box-side-col">Scan Oper #</th>
+            <th colspan="4">Scan Oper #</th>
+            <th rowspan="2" class="tally-col">Tally</th>
+        </tr>
+        <tr class="header-row">
+            <th class="protector-col pin-side-col">Pin Side#</th>
+            <th class="protector-col box-side-col">Box Side#</th>
+            <th class="bevel-col">Bevel Pin</th>
+            <th class="bevel-col">Bevel Box</th>
+            <th class="grind-col">Grind Pin</th>
+            <th class="grind-col">Grind Box</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in joint_tracking %}
+        <tr class="data-row">
+            <td class="row-number">{{ forloop.counter }}</td>
+            <td>{{ item.joint_number|default:"" }}</td>
+            <td class="pin-date-col">{{ item.pin_date|date:"d M Y"|default:"" }}</td>
+            <td class="pin-welder-col">{{ item.pin_welder|default:"" }}</td>
+            <td class="pin-side-col">{{ item.pin_side|default:"" }}</td>
+            <td class="box-date-col">{{ item.box_date|date:"d M Y"|default:"" }}</td>
+            <td class="box-welder-col">{{ item.box_welder|default:"" }}</td>
+            <td class="box-side-col">{{ item.box_side|default:"" }}</td>
+            <td>{% if item.bevel_pin %}{{ item.bevel_pin_operator|default:"" }}{% endif %}</td>
+            <td>{% if item.bevel_box %}{{ item.bevel_box_operator|default:"" }}{% endif %}</td>
+            <td>{% if item.grind_pin %}{{ item.grind_pin_operator|default:"" }}{% endif %}</td>
+            <td>{% if item.grind_box %}{{ item.grind_box_operator|default:"" }}{% endif %}</td>
+            <td>{{ item.tally|default:"" }}</td>
+        </tr>
+        {% empty %}
+        <tr class="data-row">
+            <td colspan="13" class="text-center">No data available</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    // State untuk tracking kolom mana yang di-hide
+    let pinHidden = false;
+    let boxHidden = false;
+    
+    function toggleColumn(type) {
+        const table = document.getElementById('mainTable');
+        const toggleBtn = document.getElementById(type === 'pin' ? 'togglePin' : 'toggleBox');
+        
+        if (type === 'pin') {
+            pinHidden = !pinHidden;
+            if (pinHidden) {
+                table.classList.add('hide-pin-section');
+                toggleBtn.textContent = 'Show Pin Section';
+                toggleBtn.classList.add('inactive');
+            } else {
+                table.classList.remove('hide-pin-section');
+                toggleBtn.textContent = 'Hide Pin Section';
+                toggleBtn.classList.remove('inactive');
+            }
+        } else if (type === 'box') {
+            boxHidden = !boxHidden;
+            if (boxHidden) {
+                table.classList.add('hide-box-section');
+                toggleBtn.textContent = 'Show Box Section';
+                toggleBtn.classList.add('inactive');
+            } else {
+                table.classList.remove('hide-box-section');
+                toggleBtn.textContent = 'Hide Box Section';
+                toggleBtn.classList.remove('inactive');
+            }
+        }
+    }
+</script>
+{% endblock %}

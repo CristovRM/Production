@@ -1,0 +1,306 @@
+{% extends 'base_display.html' %}
+
+{% block content %}
+    {% load static %}
+
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row text-center mb-4">
+            <h4>Weekend Production Dashboard</h4>
+            <h6 class="text-muted">
+                Saturday {{ saturday_date|date:"j F Y" }} & Sunday {{ sunday_date|date:"j F Y" }}
+            </h6>
+        </div>
+
+        <!-- Alert jika tidak ada data -->
+        {% if not has_saturday_data and not has_sunday_data %}
+        <div class="alert alert-warning text-center" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            No data available for this weekend period.
+        </div>
+        {% endif %}
+
+        <!-- Saturday Data Section -->
+        {% if has_saturday_data %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="text-primary mb-3">
+                    <i class="fas fa-calendar-day"></i> Saturday {{ saturday_date|date:"j F Y" }}
+                </h5>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="app-card app-card-chart h-100 shadow-sm">
+                            <div class="app-card-body p-4">
+                                <div class="chart-container">
+                                    <canvas id="sat-chart-threading-day" style="height:33vh; width:100%"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="app-card app-card-chart h-100 shadow-sm">
+                            <div class="app-card-body p-4">
+                                <div class="chart-container">
+                                    <canvas id="sat-chart-welding-day" style="height:33vh; width:100%"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mb-5">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="app-card app-card-chart h-100 shadow-sm">
+                            <div class="app-card-body p-4">
+                                <div class="chart-container">
+                                    <canvas id="sat-chart-threading-night" style="height:33vh; width:100%"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="app-card app-card-chart h-100 shadow-sm">
+                            <div class="app-card-body p-4">
+                                <div class="chart-container">
+                                    <canvas id="sat-chart-welding-night" style="height:33vh; width:100%"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Sunday Data Section -->
+        {% if has_sunday_data %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="text-success mb-3">
+                    <i class="fas fa-calendar-day"></i> Sunday {{ sunday_date|date:"j F Y" }}
+                </h5>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="app-card app-card-chart h-100 shadow-sm">
+                            <div class="app-card-body p-4">
+                                <div class="chart-container">
+                                    <canvas id="sun-chart-threading-day" style="height:33vh; width:100%"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="app-card app-card-chart h-100 shadow-sm">
+                            <div class="app-card-body p-4">
+                                <div class="chart-container">
+                                    <canvas id="sun-chart-welding-day" style="height:33vh; width:100%"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="app-card app-card-chart h-100 shadow-sm">
+                            <div class="app-card-body p-4">
+                                <div class="chart-container">
+                                    <canvas id="sun-chart-threading-night" style="height:33vh; width:100%"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="app-card app-card-chart h-100 shadow-sm">
+                            <div class="app-card-body p-4">
+                                <div class="chart-container">
+                                    <canvas id="sun-chart-welding-night" style="height:33vh; width:100%"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- No Data Messages -->
+        {% if not has_saturday_data %}
+        <div class="alert alert-info text-center" role="alert">
+            <i class="fas fa-info-circle"></i>
+            No data available for Saturday {{ saturday_date|date:"j F Y" }}
+        </div>
+        {% endif %}
+
+        {% if not has_sunday_data %}
+        <div class="alert alert-info text-center" role="alert">
+            <i class="fas fa-info-circle"></i>
+            No data available for Sunday {{ sunday_date|date:"j F Y" }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Data untuk JavaScript -->
+    {{ saturday_data|json_script:"saturday-chart-data" }}
+    {{ sunday_data|json_script:"sunday-chart-data" }}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const saturdayData = JSON.parse(document.getElementById('saturday-chart-data').textContent);
+            const sundayData = JSON.parse(document.getElementById('sunday-chart-data').textContent);
+
+            // Konfigurasi chart untuk Saturday
+            const saturdayConfigs = [
+                { id: 'sat-chart-threading-day', data: saturdayData.threading_day },
+                { id: 'sat-chart-welding-day', data: saturdayData.welding_day },
+                { id: 'sat-chart-threading-night', data: saturdayData.threading_night },
+                { id: 'sat-chart-welding-night', data: saturdayData.welding_night },
+            ];
+
+            // Konfigurasi chart untuk Sunday
+            const sundayConfigs = [
+                { id: 'sun-chart-threading-day', data: sundayData.threading_day },
+                { id: 'sun-chart-welding-day', data: sundayData.welding_day },
+                { id: 'sun-chart-threading-night', data: sundayData.threading_night },
+                { id: 'sun-chart-welding-night', data: sundayData.welding_night },
+            ];
+
+            Chart.register(ChartDataLabels); // Daftarkan plugin
+
+            function createChart(config) {
+                const ctx = document.getElementById(config.id);
+                if (ctx && config.data.machines.length > 0) {
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: config.data.machines,
+                            datasets: [
+                                {
+                                    label: 'OEE (%)',
+                                    data: config.data.oee,
+                                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                                    datalabels: {
+                                        align: 'end',
+                                        anchor: 'end',
+                                        formatter: function(value) {
+                                            const emoji = value >= 80 ? '😊' : '😞';
+                                            return `${value}${emoji}`;
+                                        },
+                                        font: { size: 11 }
+                                    }
+                                },
+                                {
+                                    label: 'Reject (EA)',
+                                    data: config.data.reject,
+                                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                                    datalabels: {
+                                        align: 'end',
+                                        anchor: 'end',
+                                        formatter: value => `${value}`,
+                                        font: { size: 11 },
+                                        color: '#000'
+                                    }
+                                },
+                                {
+                                    label: 'Non Record Time (HRS)',
+                                    data: config.data.not_run,
+                                    backgroundColor: 'rgba(255, 206, 86, 0.7)',
+                                    datalabels: {
+                                        align: 'end',
+                                        anchor: 'end',
+                                        formatter: value => `${value}`,
+                                        font: { size: 11 },
+                                        color: '#000'
+                                    }
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: config.data.label
+                                },
+                                datalabels: {
+                                    display: true
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        },
+                        plugins: [ChartDataLabels]
+                    });
+                }
+            }
+
+            // Buat semua chart Saturday
+            saturdayConfigs.forEach(createChart);
+            
+            // Buat semua chart Sunday
+            sundayConfigs.forEach(createChart);
+        });
+    </script>
+
+    <style>
+        .alert {
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            border-radius: 15px;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        h5 {
+            border-left: 4px solid #007bff;
+            padding-left: 15px;
+        }
+        
+        h5.text-success {
+            border-left-color: #28a745;
+        }
+    </style>
+
+{% endblock %}

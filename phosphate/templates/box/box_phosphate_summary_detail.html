@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row align-items-center justify-content-between">
+        <div class="col-12 col-md-6 mb-2">
+            <h2 class="mb-3">BOX Phosphate Report</h2>
+        </div>
+        <div class="col-12 col-md-6 text-md-end text-start mb-2">
+            <a class="btn btn-secondary text-uppercase me-2" href="{% url 'box_phosphate_report' header.id %}" target="_blank">Cetak Laporan</a>
+            <a class="btn btn-primary text-uppercase" href="{% url 'box_phosphate_summary' %}">Kembali</a>
+        </div>
+
+    </div>
+
+    <div class="card p-3 mb-3">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr><td width="150">Date</td><td width="10">:</td><td>{{ header.created_at|date:"d F Y" }}</td></tr>
+                <tr><td>Job Order</td><td>:</td><td>{{ header.bjo.bjo }}</td></tr>
+                <tr><td>Station</td><td>:</td><td>{{ header.station }}</td></tr>
+                <tr><td>Shift</td><td>:</td><td>{{ header.shift }}</td></tr>
+                <tr><td>Operator</td><td>:</td><td>{{ header.operator.name }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="card p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>No.</th>
+                        <th>Serial Number</th>
+                        <th>Phosphate Status</th>
+                        <th>Install Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detail in details %}
+                        <tr>
+                            <td class="text-end">{{ forloop.counter }}</td>
+                            <td>{{ detail.protector_number.serial_number }}</td>
+                            <td>
+                                {% if detail.is_phosphated %}
+                                    <span class="badge bg-success">Phosphated</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Not yet</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if detail.is_installed %}
+                                    <span class="badge bg-success">
+                                        Installed
+                                        {% if detail.installed_to %}
+                                            <br><small>on joint Number: {{ detail.installed_to.joint_number }}</small>
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger">Not yet</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-center text-danger">Belum ada data.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

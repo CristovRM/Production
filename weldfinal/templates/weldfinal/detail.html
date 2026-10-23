@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="container mt-4">
+    <div class="row align-items-center justify-content-between">
+        <div class="col-12 col-md-6 mb-2">
+            <h2 class="mb-3">Weld Final Record</h2>
+        </div>
+        <div class="col-12 col-md-6 text-md-end text-start mb-2">
+            <a class="btn btn-secondary text-uppercase me-2" href="{% url 'weldfinal_report' header.id %}" target="_blank">Cetak Laporan</a>
+            <a class="btn btn-primary text-uppercase" href="{% url 'weldfinal_summary' %}">Selesai</a>
+        </div>
+    </div>
+
+    {% if header %}
+        <div class="card p-3 mb-3">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tr><td width="150">Date</td><td width="10">:</td><td>{{ header.created_at|date:"d F Y" }}</td></tr>
+                    <tr><td>Job Order</td><td>:</td><td>{{ header.bjo.bjo }}</td></tr>
+                    <tr><td>Shift</td><td>:</td><td>{{ header.shift }}</td></tr>
+                    <tr><td>Operator</td><td>:</td><td>{{ header.operator.name }}</td></tr>
+                </table>
+            </div>
+
+            <form method="post" action="{% url 'weldfinal_detail' header.id %}">
+                {% csrf_token %}
+                <div class="row mb-2 gy-2">
+                    <!-- Joint Number -->
+                    <div class="col-6 col-md-2">
+                        <select id="joint-number" name="joint_number" class="form-control select2" data-placeholder="Joint Number">
+                            <option value=""></option>
+                            {% for item in joint_list %}
+                                <option value="{{ item.id }}">
+                                    {{ item.joint_number }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Tally -->
+                    <div class="col-6 col-md-2">
+                        <input type="number" name="tally" class="form-control" placeholder="Tally (inch)" step="any">
+                    </div>
+
+                    <!-- Bevel PIN -->
+                    <div class="col-6 col-md-2">
+                        <div class="form-check form-switch d-flex align-items-center" style="height: 100%;">
+                            <input class="form-check-input me-2" type="checkbox" name="bevel_pin" id="bevel_pin">
+                            <label class="form-check-label" for="bevel_pin">Bevel PIN</label>
+                        </div>
+                    </div>
+
+                    <!-- Bevel BOX -->
+                    <div class="col-6 col-md-2">
+                        <div class="form-check form-switch d-flex align-items-center" style="height: 100%;">
+                            <input class="form-check-input me-2" type="checkbox" name="bevel_box" id="bevel_box">
+                            <label class="form-check-label" for="bevel_box">Bevel BOX</label>
+                        </div>
+                    </div>
+
+                    <!-- Grind PIN -->
+                    <div class="col-6 col-md-2">
+                        <div class="form-check form-switch d-flex align-items-center" style="height: 100%;">
+                            <input class="form-check-input me-2" type="checkbox" name="grind_pin" id="grind_pin">
+                            <label class="form-check-label" for="grind_pin">Grind PIN</label>
+                        </div>
+                    </div>
+
+                    <!-- Grind BOX -->
+                    <div class="col-6 col-md-2">
+                        <div class="form-check form-switch d-flex align-items-center" style="height: 100%;">
+                            <input class="form-check-input me-2" type="checkbox" name="grind_box" id="grind_box">
+                            <label class="form-check-label" for="grind_box">Grind BOX</label>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12 col-md-12 mt-2">
+                        <button type="submit" class="btn btn-danger w-100 text-uppercase">Simpan</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    {% else %}
+        <p class="text-center text-danger">Belum ada data yang tersimpan.</p>
+    {% endif %}
+
+    <div class="card p-3">
+        {% if messages %}
+        <div class="container mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>No.</th>
+                        <th>Joint Number</th>
+                        <th>Tally (inch)</th>
+                        <th>Bevel PIN</th>
+                        <th>Bevel BOX</th>
+                        <th>Grind PIN</th>
+                        <th>Grind BOX</th>
+                        <th width="200">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if completed_joints %}
+                        {% for detail in completed_joints %}
+                        <tr>
+                            <td class="text-end">{{ forloop.counter }}</td>
+                            <td>{{ detail.joint_number.joint_number }}</td>
+                            <td>
+                                {% if detail.tally %}
+                                    {{ detail.tally }}
+                                {% else %}
+                                    <span class="badge bg-danger">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if detail.bevel_pin %}
+                                    <span class="badge bg-success">✓</span>
+                                {% else %}
+                                    <span class="badge bg-danger">✗</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if detail.bevel_box %}
+                                    <span class="badge bg-success">✓</span>
+                                {% else %}
+                                    <span class="badge bg-danger">✗</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if detail.grind_pin %}
+                                    <span class="badge bg-success">✓</span>
+                                {% else %}
+                                    <span class="badge bg-danger">✗</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if detail.grind_box %}
+                                    <span class="badge bg-success">✓</span>
+                                {% else %}
+                                    <span class="badge bg-danger">✗</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button 
+                                    type="button" 
+                                    class="btn btn-sm btn-primary mb-1"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#updateModal{{ detail.id }}"
+                                >
+                                    <i class="bi bi-pencil"></i> Update
+                                </button>
+                                
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger mb-1" 
+                                        onclick="confirmDelete('{{ detail.id }}', '{{ detail.joint_number.joint_number }}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+
+                                <!-- Modal for Update -->
+                                <div class="modal fade" id="updateModal{{ detail.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Update Weld Final - Joint {{ detail.joint_number.joint_number }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form method="post" action="{% url 'weldfinal_update' header.id detail.id %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Tally (inch)</label>
+                                                        <input type="number" name="tally" class="form-control" step="any" placeholder="Tally dalam inci" value="{{ detail.tally|default:'' }}">
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" name="bevel_pin" id="update_bevel_pin_{{ detail.id }}" {% if detail.bevel_pin %}checked{% endif %}>
+                                                            <label class="form-check-label" for="update_bevel_pin_{{ detail.id }}">Bevel PIN</label>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" name="bevel_box" id="update_bevel_box_{{ detail.id }}" {% if detail.bevel_box %}checked{% endif %}>
+                                                            <label class="form-check-label" for="update_bevel_box_{{ detail.id }}">Bevel BOX</label>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" name="grind_pin" id="update_grind_pin_{{ detail.id }}" {% if detail.grind_pin %}checked{% endif %}>
+                                                            <label class="form-check-label" for="update_grind_pin_{{ detail.id }}">Grind PIN</label>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" name="grind_box" id="update_grind_box_{{ detail.id }}" {% if detail.grind_box %}checked{% endif %}>
+                                                            <label class="form-check-label" for="update_grind_box_{{ detail.id }}">Grind BOX</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                    <button type="submit" class="btn btn-primary">Update</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-warning">Belum ada data joint yang tersimpan.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus data ini?</p>
+                <p class="fw-bold" id="deleteItemName"></p>
+                <p class="text-warning small mt-3"><i class="bi bi-exclamation-triangle"></i> Data yang dihapus tidak dapat dikembalikan</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form method="post" id="deleteForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Ya, Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.btn-sm {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+    cursor: pointer;
+}
+
+.form-check-label {
+    cursor: pointer;
+    user-select: none;
+}
+</style>
+
+<!-- Auto-hide alert -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            setTimeout(function () {
+                alert.classList.remove('show');
+                alert.classList.add('fade');
+                setTimeout(function () {
+                    alert.remove();
+                }, 500);
+            }, 4000);
+        });
+    });
+</script>
+
+<!-- JQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            placeholder: function () {
+                return $(this).data('placeholder');
+            },
+            allowClear: true,
+            width: '100%'
+        });
+
+        // Form validation
+        $('form[action*="weldfinal_detail"]').on('submit', function(e) {
+            const jointSelected = $('#joint-number').val();
+            
+            if (!jointSelected) {
+                e.preventDefault();
+                alert('Joint Number harus dipilih!');
+                return false;
+            }
+            
+            return true;
+        });
+    });
+
+    // Delete confirmation
+    function confirmDelete(detailId, jointNumber) {
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        const deleteForm = document.getElementById('deleteForm');
+        const itemName = document.getElementById('deleteItemName');
+        
+        itemName.textContent = 'Joint Number: ' + jointNumber;
+        
+        deleteForm.action = "{% url 'weldfinal_detail_delete' 0 %}".replace('0', detailId);
+        
+        modal.show();
+    }
+</script>
+
+{% endblock %}

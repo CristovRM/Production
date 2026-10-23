@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Update bevel consumption{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <!-- Django Messages Display -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-hide-alert" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <h2 class="mb-4">Edit Bevel Consumption</h2>
+
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Bevel Header</label>
+                <input type="text" class="form-control" 
+                       value="{% if item.Reff %}{% if item.Reff.machine %}{{ item.Reff.machine }}{% endif %}{% if item.Reff.machine and item.Reff.date %} - {% endif %}{% if item.Reff.date %}{{ item.Reff.date|date:'d/m/Y' }}{% endif %}{% endif %}" 
+                       readonly>
+                <small class="text-muted">Bevel header terkait</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Tanggal Dibuat</label>
+                <input type="text" class="form-control" value="{% if item.created_at %}{{ item.created_at|date:'d/m/Y H:i' }}{% endif %}" readonly>
+                <small class="text-muted">Tanggal pembuatan data consumption</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Insert SNMG</label>
+                <input type="number" 
+                       name="insert_snmg" 
+                       class="form-control" 
+                       step="0.01"
+                       placeholder="Masukkan nilai Insert SNMG..."
+                       value="{% if item.insert_snmg %}{{ item.insert_snmg }}{% endif %}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Insert DNMG</label>
+                <input type="number" 
+                       name="insert_dnmg" 
+                       class="form-control" 
+                       step="0.01"
+                       placeholder="Masukkan nilai Insert DNMG..."
+                       value="{% if item.insert_dnmg %}{{ item.insert_dnmg }}{% endif %}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Insert Bevel</label>
+                <input type="number" 
+                       name="insert_bevel" 
+                       class="form-control" 
+                       step="0.01"
+                       placeholder="Masukkan nilai Insert Bevel..."
+                       value="{% if item.insert_bevel %}{{ item.insert_bevel }}{% endif %}">
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Others</label>
+                <input type="number" 
+                       name="others" 
+                       class="form-control" 
+                       step="0.01"
+                       placeholder="Masukkan nilai Others..."
+                       value="{% if item.others %}{{ item.others }}{% endif %}">
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-success">Simpan Perubahan</button>
+            <a href="{% url 'bevel_consumption_list' %}" class="btn btn-secondary">Kembali</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide alerts
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 2500);
+    });
+});
+</script>
+
+<style>
+/* Custom alert styles */
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-error, .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info {
+    background-color: #cce8f4;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+/* Smooth fade out animation for auto-hiding alerts */
+.alert.fade {
+    transition: opacity 0.5s ease-out;
+}
+
+.alert i {
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

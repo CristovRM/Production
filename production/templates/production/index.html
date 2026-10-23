@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load static %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">NOV XL Systems Production</h1>
+        <p class="lead text-muted">Production Management Dashboard</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3 class="fw-bold">{{ stats.thread_total_finished }}</h3>
+                    <p class="text-muted mb-0">Threading Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3 class="fw-bold">{{ stats.weld_total_finished }}</h3>
+                    <p class="text-muted mb-0">Welding Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3 class="fw-bold">{{ stats.thread_total_progress }}</h3>
+                    <p class="text-muted mb-0">Threading In Progress</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3 class="fw-bold">{{ stats.weld_total_progress }}</h3>
+                    <p class="text-muted mb-0">Welding In Progress</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Jobs Section -->
+    <div class="row g-4 mb-5">
+        <!-- Threading Completed -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-check-circle me-2"></i>Threading - Completed (Last 5)</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if thread_finished %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Finished</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in thread_finished %}
+                                <tr>
+                                    <td class="fw-bold">{{ job.bjo }}</td>
+                                    <td>{{ job.customer }}</td>
+                                    <td>{{ job.size }}</td>
+                                    <td>{{ job.qty }}</td>
+                                    <td><span class="badge bg-success">{{ job.total_finished }}</span></td>
+                                    <td>{{ job.finish_date|date:"d M Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No completed threading jobs yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Welding Completed -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-check-circle me-2"></i>Welding - Completed (Last 5)</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if weld_finished %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Finished</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in weld_finished %}
+                                <tr>
+                                    <td class="fw-bold">{{ job.bjo }}</td>
+                                    <td>{{ job.customer }}</td>
+                                    <td>{{ job.size }}</td>
+                                    <td>{{ job.qty }}</td>
+                                    <td><span class="badge bg-success">{{ job.total_finished }}</span></td>
+                                    <td>{{ job.finish_date|date:"d M Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No completed welding jobs yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- In Progress Jobs Section -->
+    <div class="row g-4">
+        <!-- Threading In Progress -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Threading - In Progress (Last 5)</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if thread_progress %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Progress</th>
+                                    <th>Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in thread_progress %}
+                                <tr>
+                                    <td class="fw-bold">{{ job.bjo }}</td>
+                                    <td>{{ job.customer }}</td>
+                                    <td>{{ job.size }}</td>
+                                    <td>{{ job.qty }}</td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark">{{ job.total_finished }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ job.remaining_qty }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No threading jobs in progress</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Welding In Progress -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Welding - In Progress (Last 5)</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if weld_progress %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>BJO</th>
+                                    <th>Customer</th>
+                                    <th>Size</th>
+                                    <th>Qty</th>
+                                    <th>Progress</th>
+                                    <th>Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in weld_progress %}
+                                <tr>
+                                    <td class="fw-bold">{{ job.bjo }}</td>
+                                    <td>{{ job.customer }}</td>
+                                    <td>{{ job.size }}</td>
+                                    <td>{{ job.qty }}</td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark">{{ job.total_finished }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ job.remaining_qty }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No welding jobs in progress</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% endblock %}

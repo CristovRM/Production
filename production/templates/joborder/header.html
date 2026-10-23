@@ -1,0 +1,537 @@
+{% extends 'base.html' %}
+{% block title %}Create new BJO{% endblock%}
+{% block content %}
+<style>
+    .critical-field {
+        position: relative;
+    }
+    .critical-field .form-label {
+        color: #dc3545 !important;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .critical-field .form-label i {
+        color: #ff6b35;
+        animation: pulse 2s infinite;
+    }
+    .critical-field .form-select {
+        border: 2px solid #ffc107 !important;
+        background-color: #fff9c4 !important;
+        transition: all 0.3s ease;
+    }
+    .critical-field .form-select:focus {
+        border-color: #ff6b35 !important;
+        box-shadow: 0 0 0 0.25rem rgba(255, 107, 53, 0.25) !important;
+        background-color: #fff !important;
+    }
+    .critical-field .form-select.is-valid {
+        border-color: #198754 !important;
+        background-color: #d1e7dd !important;
+    }
+    .warning-text {
+        font-size: 0.85em;
+        color: #dc3545;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 500;
+    }
+    .warning-text i {
+        color: #ffc107;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    .searchable-dropdown {
+        position: relative;
+    }
+    .search-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        font-size: 1rem;
+        background-color: white;
+    }
+    .search-input:focus {
+        outline: none;
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .search-input:disabled {
+        background-color: #e9ecef;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+    .dropdown-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ced4da;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    .dropdown-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    .dropdown-option:hover {
+        background-color: #e9ecef;
+    }
+    .dropdown-option.selected {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .dropdown-option.hidden {
+        display: none;
+    }
+    .no-results {
+        padding: 8px 12px;
+        color: #6c757d;
+        font-style: italic;
+    }
+    /* Composite checkbox styling */
+    .composite-field {
+        background-color: #f0f4ff;
+        border: 1px solid #c7d7f9;
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .composite-field:hover {
+        background-color: #e0e9ff;
+    }
+    .composite-field input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #0d6efd;
+        flex-shrink: 0;
+    }
+    .composite-field label {
+        margin: 0;
+        font-weight: 600;
+        color: #1a3c8f;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+    .composite-field small {
+        color: #6c757d;
+        font-size: 0.78rem;
+    }
+</style>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Create New Job Order</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <!-- Baris 1 -->
+            <div class="col-12 col-md-6">
+                <label for="bjo" class="form-label">BJO</label>
+                <input type="text" name="bjo" class="form-control" required>
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="bt" class="form-label">BT</label>
+                <input type="text" name="bt" class="form-control">
+            </div>
+
+            <!-- Baris 2 -->
+            <div class="col-12 col-md-6">
+                <label for="customer" class="form-label">Customer</label>
+                <input type="text" name="customer" class="form-control">
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="product" class="form-label">Description</label>
+                <input type="text" name="product" class="form-control">
+            </div>
+
+            <!-- Baris 3 -->
+            <div class="col-12 col-md-6">
+                <label for="qty" class="form-label">Qty</label>
+                <input type="number" name="qty" step="0.01" class="form-control" required>
+            </div>
+            <div class="col-12 col-md-6 critical-field">
+                <label for="bjo_for" class="form-label">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    BJO For
+                </label>
+                <select name="bjo_for" class="form-select" id="bjo_for">
+                    <option value="">-- Select --</option>
+                    {% for value, label in bjo_for_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <div class="warning-text">
+                    <i class="fas fa-warning"></i>
+                    Make sure the selection is correct, this data is very important.
+                </div>
+            </div>
+
+            <!-- Baris 4 - Process & Size -->
+            <div class="col-12 col-md-6 critical-field">
+                <label for="process_type" class="form-label">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Process
+                </label>
+                <select name="process_type" class="form-select" id="process_type">
+                    <option value="">-- Select Process --</option>
+                    {% for item in process_list %}
+                        <option value="{{ item.id }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+                <div class="warning-text">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Make sure the selection is correct, this data is very important.
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="size" class="form-label">Size</label>
+                <div class="searchable-dropdown">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="size_search"
+                        placeholder="-- Select Process First --"
+                        disabled
+                        autocomplete="off"
+                    >
+                    <input type="hidden" name="size" id="size_value">
+                    <div class="dropdown-options" id="size_options"></div>
+                </div>
+            </div>
+
+            <!-- Baris 5 - Connection & Info Tag -->
+            <div class="col-12 col-md-6 critical-field">
+                <label for="conn" class="form-label">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Connection
+                </label>
+                <select name="conn" class="form-select" id="conn">
+                    <option value="">-- Select Connection --</option>
+                    {% for item in conn_list %}
+                        <option value="{{ item.id }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+                <div class="warning-text">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Make sure the selection is correct, this data is very important.
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="info" class="form-label">Info Tag</label>
+                <select name="info" class="form-select">
+                    <option value="">-- Select Info --</option>
+                    {% for item in info_list %}
+                        <option value="{{ item.id }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Baris 6 - CT Reference & Type Order -->
+            <div class="col-12 col-md-6 critical-field">
+                <label for="ct_reference" class="form-label">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    CT References
+                </label>
+                <select name="ct_reference" class="form-select" id="ct_reference">
+                    <option value="">-- Select Grade --</option>
+                    {% for item in grade_list %}
+                        <option value="{{ item.id }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+                <div class="warning-text">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Make sure the selection is correct, this data is very important.
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="type_order" class="form-label">XL-100 Type</label>
+                <select name="type_order" class="form-select">
+                    <option value="">-- Select Type --</option>
+                    {% for value, label in type_order_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Baris 7 - Lube & Dates -->
+            <div class="col-12 col-md-4">
+                <label for="lube" class="form-label">Lube</label>
+                <input type="text" name="lube" class="form-control" placeholder="Lube Name">
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control">
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control">
+            </div>
+
+            <!-- Baris 8 - Composite -->
+            <div class="col-12">
+                <div class="composite-field" onclick="document.getElementById('is_composite').click()">
+                    <input type="checkbox" name="is_composite" id="is_composite" onclick="event.stopPropagation()">
+                    <div>
+                        <label for="is_composite">Composite</label>
+                        <br>
+                        <small>Centang jika job order ini merupakan pekerjaan Composite</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-success text-uppercase" id="submit_btn">Save Job Order</button>
+        </div>
+    </form>
+</div>
+
+<!-- Data JSON untuk JavaScript -->
+<script type="application/json" id="process-size-data">
+    {{ process_size_mapping|safe }}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const processSizeData = JSON.parse(document.getElementById('process-size-data').textContent);
+    
+    const processSelect = document.getElementById('process_type');
+    const sizeSearch = document.getElementById('size_search');
+    const sizeValue = document.getElementById('size_value');
+    const sizeOptions = document.getElementById('size_options');
+    
+    let currentSizes = [];
+    let selectedIndex = -1;
+    
+    function showDropdown() {
+        sizeOptions.style.display = 'block';
+    }
+    
+    function hideDropdown() {
+        setTimeout(() => {
+            sizeOptions.style.display = 'none';
+        }, 200);
+    }
+    
+    function filterOptions() {
+        const searchTerm = sizeSearch.value.toLowerCase();
+        const options = sizeOptions.querySelectorAll('.dropdown-option');
+        let visibleCount = 0;
+        
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                option.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                option.classList.add('hidden');
+            }
+        });
+        
+        let noResults = sizeOptions.querySelector('.no-results');
+        if (visibleCount === 0 && searchTerm !== '') {
+            if (!noResults) {
+                noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'Tidak ada hasil ditemukan';
+                sizeOptions.appendChild(noResults);
+            }
+            noResults.style.display = 'block';
+        } else if (noResults) {
+            noResults.style.display = 'none';
+        }
+    }
+    
+    function selectOption(value, text) {
+        sizeValue.value = value;
+        sizeSearch.value = text;
+        hideDropdown();
+        
+        sizeSearch.classList.remove('is-invalid');
+        if (value !== '') {
+            sizeSearch.classList.add('is-valid');
+        } else {
+            sizeSearch.classList.remove('is-valid');
+        }
+    }
+    
+    function populateSizes(sizes) {
+        currentSizes = sizes;
+        sizeOptions.innerHTML = '';
+        
+        if (sizes.length === 0) {
+            sizeOptions.innerHTML = '<div class="no-results">No sizes available</div>';
+            return;
+        }
+        
+        sizes.forEach(size => {
+            const option = document.createElement('div');
+            option.className = 'dropdown-option';
+            option.textContent = size.name;
+            option.setAttribute('data-value', size.id);
+            
+            option.addEventListener('click', function() {
+                selectOption(size.id, size.name);
+            });
+            
+            sizeOptions.appendChild(option);
+        });
+    }
+    
+    processSelect.addEventListener('change', function() {
+        const selectedProcessId = this.value;
+        
+        sizeValue.value = '';
+        sizeSearch.value = '';
+        sizeSearch.classList.remove('is-valid', 'is-invalid');
+        
+        if (selectedProcessId === '') {
+            sizeSearch.disabled = true;
+            sizeSearch.placeholder = '-- Select Process First --';
+            sizeOptions.innerHTML = '';
+        } else {
+            sizeSearch.disabled = false;
+            sizeSearch.placeholder = 'Type to search size...';
+            
+            if (processSizeData[selectedProcessId]) {
+                populateSizes(processSizeData[selectedProcessId]);
+            } else {
+                populateSizes([]);
+            }
+        }
+    });
+    
+    sizeSearch.addEventListener('input', function() {
+        if (!this.disabled) {
+            showDropdown();
+            filterOptions();
+            
+            const currentText = this.value;
+            const selectedSize = currentSizes.find(s => s.name === currentText);
+            if (!selectedSize) {
+                sizeValue.value = '';
+            }
+        }
+    });
+    
+    sizeSearch.addEventListener('focus', function() {
+        if (!this.disabled && currentSizes.length > 0) {
+            showDropdown();
+            filterOptions();
+        }
+    });
+    
+    sizeSearch.addEventListener('blur', function() {
+        hideDropdown();
+    });
+    
+    sizeSearch.addEventListener('keydown', function(e) {
+        const visibleOptions = Array.from(sizeOptions.querySelectorAll('.dropdown-option:not(.hidden)'));
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, visibleOptions.length - 1);
+            updateSelectedOption(visibleOptions);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, -1);
+            updateSelectedOption(visibleOptions);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex >= 0 && visibleOptions[selectedIndex]) {
+                const option = visibleOptions[selectedIndex];
+                selectOption(option.getAttribute('data-value'), option.textContent);
+            }
+        } else if (e.key === 'Escape') {
+            hideDropdown();
+        }
+    });
+    
+    function updateSelectedOption(visibleOptions) {
+        sizeOptions.querySelectorAll('.dropdown-option.selected').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        
+        if (selectedIndex >= 0 && visibleOptions[selectedIndex]) {
+            visibleOptions[selectedIndex].classList.add('selected');
+        }
+    }
+    
+    document.addEventListener('click', function(e) {
+        if (!sizeSearch.contains(e.target) && !sizeOptions.contains(e.target)) {
+            hideDropdown();
+        }
+    });
+    
+    document.getElementById('submit_btn').addEventListener('click', function(e) {
+        const criticalFields = [
+            { id: 'bjo_for', name: 'BJO For' },
+            { id: 'process_type', name: 'Process' },
+            { id: 'conn', name: 'Connection' },
+            { id: 'ct_reference', name: 'CT References' }
+        ];
+        
+        let emptyFields = [];
+        
+        criticalFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element && element.value === '') {
+                emptyFields.push(field.name);
+                element.classList.add('is-invalid');
+            } else if (element) {
+                element.classList.add('is-valid');
+                element.classList.remove('is-invalid');
+            }
+        });
+        
+        if (emptyFields.length > 0) {
+            e.preventDefault();
+            alert(`⚠️ ATTENTION!\n\nThe following fields are not filled in and are very important:\n\n${emptyFields.map(field => '• ' + field).join('\n')}\n\nMake sure all critical fields are selected correctly!`);
+        }
+    });
+
+    const criticalFieldIds = ['bjo_for', 'process_type', 'conn', 'ct_reference'];
+    
+    criticalFieldIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', function() {
+                if (this.value !== '') {
+                    this.classList.add('is-valid');
+                    this.classList.remove('is-invalid');
+                } else {
+                    this.classList.remove('is-valid');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'joborder/report_xl100_tbase.html' %}
+
+{% block extra_style %}
+.cutting-header {
+    background-color: #e3f2fd;
+}
+
+.threading-header {
+    background-color: #fff3e0;
+}
+
+/* Highlight empty cells with light red background */
+.empty-cell {
+    background-color: #ffebee !important;
+}
+{% endblock %}
+
+{% block table_content %}
+<table class="tracking-table">
+    <thead>
+        <tr class="header-row-1">
+            <th rowspan="2" class="row-number">No</th>
+            <th rowspan="2" class="protector-col">Protector<br>No</th>
+            <th rowspan="2" class="joint-col">Pipe<br>Joint No</th>
+            <th colspan="2" class="cutting-header">Pipe Cutting</th>
+            <th colspan="2" class="threading-header">Threading</th>
+            <th rowspan="2" class="comments-col">Comments</th>
+        </tr>
+        <tr class="header-row-2">
+            <th class="cutting-header date-col">Date</th>
+            <th class="cutting-header operator-col">Operator</th>
+            <th class="threading-header date-col">Date</th>
+            <th class="threading-header operator-col">Operator</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for joint in joint_tracking %}
+        <tr class="data-row">
+            <td class="row-number">{{ forloop.counter }}</td>
+            <td {% if not joint.protector_no %}class="empty-cell"{% endif %}>{{ joint.protector_no|default_if_none:"" }}</td>
+            <td class="joint-number{% if not joint.joint_number %} empty-cell{% endif %}">{{ joint.joint_number|default_if_none:"" }}</td>
+            <td {% if not joint.cutting_date %}class="empty-cell"{% endif %}>{% if joint.cutting_date %}{{ joint.cutting_date|date:"d M Y" }}{% endif %}</td>
+            <td {% if not joint.cutting_operator %}class="empty-cell"{% endif %}>{{ joint.cutting_operator|default_if_none:"" }}</td>
+            <td {% if not joint.threading_date %}class="empty-cell"{% endif %}>{% if joint.threading_date %}{{ joint.threading_date|date:"d M Y" }}{% endif %}</td>
+            <td {% if not joint.threading_operator %}class="empty-cell"{% endif %}>{{ joint.threading_operator|default_if_none:"" }}</td>
+            <td>{{ joint.comments|default_if_none:"" }}</td>
+        </tr>
+        {% empty %}
+        <tr class="data-row">
+            <td colspan="8" style="text-align: center;">No tracking data available</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

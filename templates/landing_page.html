@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en"> 
+<head>
+    <title>{% block title %} - Batam Production System XL Systems {% endblock %}</title>
+    
+    <!-- Meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="description" content="Production System Dashboard - Main Portal">
+    <meta name="author" content="Atha">    
+    <link rel="shortcut icon" href="favicon.ico"> 
+    
+    <!-- FontAwesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bs-primary: #3b82f6;
+            --bs-secondary: #64748b;
+            --bs-success: #10b981;
+            --bs-info: #06b6d4;
+            --bs-warning: #f59e0b;
+            --bs-danger: #ef4444;
+            --bs-light: #f8fafc;
+            --bs-dark: #1e293b;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .app-logo {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: var(--bs-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-img {
+            height: 40px;
+            width: auto;
+            margin-right: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .app-logo:hover .logo-img {
+            transform: scale(1.05);
+        }
+
+        .logo-text {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-badge {
+            font-size: 0.85rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+        }
+
+        /* Messages Alert Styling */
+        .messages-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .alert-custom {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            animation: slideInRight 0.4s ease-out;
+        }
+
+        .alert-custom .alert-icon {
+            font-size: 1.5rem;
+            margin-right: 12px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .alert-dismissing {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .welcome-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .welcome-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0;
+        }
+
+        .cards-container {
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .module-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--card-color), var(--card-color-light));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .module-card:hover::before {
+            opacity: 1;
+        }
+
+        .module-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .card-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            background: linear-gradient(135deg, var(--card-color), var(--card-color-light));
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--bs-dark);
+        }
+
+        .card-description {
+            color: var(--bs-secondary);
+            line-height: 1.6;
+            flex: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+        }
+
+        .card-arrow {
+            font-size: 1.2rem;
+            color: var(--card-color);
+            transition: transform 0.3s ease;
+        }
+
+        .module-card:hover .card-arrow {
+            transform: translateX(5px);
+        }
+
+        /* Card color variations */
+        .production-card {
+            --card-color: #3b82f6;
+            --card-color-light: #60a5fa;
+        }
+
+        .info-card {
+            --card-color: #10b981;
+            --card-color-light: #34d399;
+        }
+
+        .phosphate-card {
+            --card-color: #f59e0b;
+            --card-color-light: #fbbf24;
+        }
+
+        .cutting-card {
+            --card-color: #ef4444;
+            --card-color-light: #f87171;
+        }
+
+        .bevel-card {
+            --card-color: #06b6d4;
+            --card-color-light: #22d3ee;
+        }
+
+        .threading-card {
+            --card-color: #8b5cf6;
+            --card-color-light: #a78bfa;
+        }
+
+        .accounts-card {
+            --card-color: #ec4899;
+            --card-color-light: #f472b6;
+        }
+
+        .app-footer {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: auto;
+        }
+
+        @media (max-width: 768px) {
+            .welcome-title {
+                font-size: 2rem;
+            }
+            
+            .module-card {
+                padding: 1.5rem;
+            }
+            
+            .card-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+
+            .logo-img {
+                height: 35px;
+            }
+
+            .messages-container {
+                top: 70px;
+                right: 10px;
+                left: 10px;
+                max-width: 100%;
+            }
+        }
+
+        /* Animation */
+        .module-card {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .module-card:nth-child(1) { animation-delay: 0.1s; }
+        .module-card:nth-child(2) { animation-delay: 0.2s; }
+        .module-card:nth-child(3) { animation-delay: 0.3s; }
+        .module-card:nth-child(4) { animation-delay: 0.4s; }
+        .module-card:nth-child(5) { animation-delay: 0.5s; }
+        .module-card:nth-child(6) { animation-delay: 0.6s; }
+        .module-card:nth-child(7) { animation-delay: 0.7s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head> 
+
+<body class="app">
+    <!-- Messages Alert Container -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show alert-custom" role="alert">
+            <div class="d-flex align-items-center">
+                <span class="alert-icon">
+                    {% if message.tags == 'success' %}
+                        <i class="fas fa-check-circle text-success"></i>
+                    {% elif message.tags == 'error' or message.tags == 'danger' %}
+                        <i class="fas fa-exclamation-circle text-danger"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                    {% elif message.tags == 'info' %}
+                        <i class="fas fa-info-circle text-info"></i>
+                    {% else %}
+                        <i class="fas fa-bell"></i>
+                    {% endif %}
+                </span>
+                <div class="flex-grow-1">
+                    <strong>{{ message }}</strong>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+   	
+    <header class="app-header">	   	            
+        <div class="container-fluid py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <a class="app-logo" href="{% url 'dashboard' %}">
+                    <span class="logo-text">Systems Dashboard</span>
+                </a>
+                
+                <div class="d-flex align-items-center">
+                    <div class="user-info me-3">
+                        <span class="badge user-badge 
+                            {% if user.role == 'admin' %}bg-danger
+                            {% elif user.role == 'management' %}bg-warning text-dark
+                            {% elif user.role == 'supervisor' %}bg-info
+                            {% elif user.role == 'engineer' %}bg-primary
+                            {% elif user.role == 'maintenance' %}bg-success
+                            {% elif user.role == 'leadman' %}bg-secondary
+                            {% else %}bg-dark
+                            {% endif %}">
+                            {{ user.get_role_display }}
+                        </span>
+                        <span class="text-dark fw-bold">{{ user.full_name }}</span>
+                    </div>
+                    <div class="dropdown">
+                    <a class="btn btn-outline-primary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user me-1"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item" style="border: none; background: none; width: 100%; text-align: left; cursor: pointer;">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <main class="main-content">
+        <div class="cards-container">
+            <div class="welcome-section">
+                <h1 class="welcome-title">NOV XL Systems Dashboard</h1>
+                <p class="welcome-subtitle">
+                    {% if user.role == 'operator' or user.role == 'supervisor' or user.role == 'maintenance' or user.role == 'engineer' or user.role == 'leadman' %}
+                        Welcome, {{ user.full_name }}! Select your module below
+                    {% else %}
+                        Select a module to continue
+                    {% endif %}
+                </p>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Production Module - Semua role bisa akses -->
+                <div class="col-lg-4 col-md-6">
+                    <a href="/production/" class="module-card production-card">
+                        <div class="card-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <h3 class="card-title">Production</h3>
+                        <p class="card-description">
+                            Manage production processes, monitor manufacturing workflows, and track production metrics in real-time.
+                        </p>
+                        <div class="card-footer">
+                            <i class="fas fa-arrow-right card-arrow"></i>
+                        </div>
+                    </a>
+                </div>
+                
+                {% if user.role == 'admin' or user.role == 'management' %}
+                <!-- Info/Display Module - Hanya untuk admin dan management -->
+                <div class="col-lg-4 col-md-6">
+                    <a href="/info/oeedashboard/" class="module-card info-card">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="card-title">Information Display</h3>
+                        <p class="card-description">
+                            View comprehensive dashboards, reports, and analytics for production data visualization and insights.
+                        </p>
+                        <div class="card-footer">
+                            <i class="fas fa-arrow-right card-arrow"></i>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% if user.role == 'operator' or user.role == 'supervisor' or user.role == 'admin' or user.role == 'management' %}
+                <!-- Phosphate Module - Untuk operator, supervisor, admin, dan management -->
+                <div class="col-lg-4 col-md-6">
+                    <a href="/phosphate/" class="module-card phosphate-card">
+                        <div class="card-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <h3 class="card-title">Phosphate Management</h3>
+                        <p class="card-description">
+                            Monitor phosphate production processes, and quality control procedures.
+                        </p>
+                        <div class="card-footer">
+                            <i class="fas fa-arrow-right card-arrow"></i>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Cutting Module - Untuk operator, admin, dan management -->
+                <div class="col-lg-4 col-md-6">
+                    <a href="/cutting/" class="module-card cutting-card">
+                        <div class="card-icon">
+                            <i class="fas fa-cut"></i>
+                        </div>
+                        <h3 class="card-title">Cutting</h3>
+                        <p class="card-description">
+                            Manage cutting processes, and track material usage.
+                        </p>
+                        <div class="card-footer">
+                            <i class="fas fa-arrow-right card-arrow"></i>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Weld Final Module - TAMBAHKAN INI -->
+                <div class="col-lg-4 col-md-6">
+                    <a href="/weldfinal/" class="module-card weldfinal-card">
+                        <div class="card-icon">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <h3 class="card-title">Weld Final</h3>
+                        <p class="card-description">
+                            Manage weld final processes, track bevel and grind operations, and monitor joint completion status.
+                        </p>
+                        <div class="card-footer">
+                            <i class="fas fa-arrow-right card-arrow"></i>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if user.role in 'admin,supervisor,engineer,leadman,operator' %}
+                <!-- Bevel Module - Untuk admin, supervisor, engineer, leadman, operator -->
+                <div class="col-lg-4 col-md-6">
+                    <a href="/bevel/" class="module-card bevel-card">
+                        <div class="card-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <h3 class="card-title">Beveling</h3>
+                        <p class="card-description">
+                            Manage beveling operations, track production output, and monitor machine performance.
+                        </p>
+                        <div class="card-footer">
+                            <i class="fas fa-arrow-right card-arrow"></i>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% if user.role == 'admin' %}
+                <!-- Accounts Module - Hanya untuk admin -->
+                <div class="col-lg-4 col-md-6">
+                    <a href="/accounts/" class="module-card accounts-card">
+                        <div class="card-icon">
+                            <i class="fas fa-users-cog"></i>
+                        </div>
+                        <h3 class="card-title">Account Management</h3>
+                        <p class="card-description">
+                            Manage user accounts, permissions, roles, and system access controls for all modules.
+                        </p>
+                        <div class="card-footer">
+                            <i class="fas fa-arrow-right card-arrow"></i>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+    
+    <footer class="app-footer">
+        <div class="container text-center py-3">
+            <small class="copyright">Dev by: Atha, Code by: Cristov @2025</small>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.module-card');
+            
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+                
+                // Add click ripple effect
+                card.addEventListener('click', function(e) {
+                    const ripple = document.createElement('div');
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    ripple.style.cssText = `
+                        position: absolute;
+                        border-radius: 50%;
+                        background: rgba(255, 255, 255, 0.3);
+                        transform: scale(0);
+                        animation: ripple 0.6s linear;
+                        left: ${x}px;
+                        top: ${y}px;
+                        width: 20px;
+                        height: 20px;
+                        margin-left: -10px;
+                        margin-top: -10px;
+                        pointer-events: none;
+                    `;
+                    
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+
+            // Auto dismiss alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert-custom');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.classList.add('alert-dismissing');
+                    setTimeout(() => {
+                        const bsAlert = bootstrap.Alert.getInstance(alert);
+                        if (bsAlert) {
+                            bsAlert.close();
+                        }
+                    }, 300);
+                }, 5000);
+            });
+        });
+        
+        // CSS for ripple animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

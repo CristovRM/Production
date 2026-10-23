@@ -1,0 +1,104 @@
+<div class="card">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">Thread Tracking - BOX PROTECTOR 
+            <span class="badge bg-primary ms-2">Completed: {{ box_completed|default:0 }}</span>
+        </h5>
+        <small class="text-muted">Box Threading (Multi-Stage: Uncompleted, NCR, Rework)</small>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Protector Number</th>
+                        <th class="bg-primary text-white">Box Thread Stages</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for protector in protector_tracking %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ protector.protector_number }}</strong></td>
+                        
+                        <!-- Box Thread Stages - Multi-Stage -->
+                        <td class="text-start align-top" style="min-width: 280px;">
+                            {% if protector.box_stages %}
+                                {% for stage in protector.box_stages %}
+                                <div class="stage-box mb-2 p-2 border rounded {% if forloop.last %}mb-0{% endif %}" style="background-color: #f8f9fa;">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <span class="badge 
+                                            {% if stage.status == 'COMPLETED' %}bg-success
+                                            {% elif stage.status == 'UNCOMPLETED' %}bg-warning text-dark
+                                            {% elif stage.status == 'NCR' %}bg-info
+                                            {% elif stage.status == 'REWORK' %}bg-danger
+                                            {% endif %} me-2">
+                                            Stage {{ stage.stage_number }}: {{ stage.status }}
+                                        </span>
+                                        <small class="text-muted" style="white-space: nowrap;">Out: {{ stage.output }}</small>
+                                    </div>
+                                    
+                                    {% if stage.date %}
+                                    <small class="d-block text-muted">
+                                        <i class="fas fa-calendar" style="width: 14px;"></i> {{ stage.date|date:"d M Y" }}
+                                        <i class="fas fa-clock ms-2" style="width: 14px;"></i> {{ stage.start_time|time:"H:i" }}-{{ stage.stop_time|time:"H:i" }}
+                                        <span class="badge bg-dark ms-1">{{ stage.duration }}h</span>
+                                    </small>
+                                    <small class="d-block text-muted">
+                                        <i class="fas fa-user" style="width: 14px;"></i> {{ stage.operator|truncatechars:20 }}
+                                    </small>
+                                    <small class="d-block text-muted">
+                                        <i class="fas fa-cog" style="width: 14px;"></i> {{ stage.machine|truncatechars:20 }}
+                                    </small>
+                                    {% if stage.comment %}
+                                    <small class="d-block text-info mt-1">
+                                        <i class="fas fa-comment" style="width: 14px;"></i> {{ stage.comment|truncatechars:40 }}
+                                    </small>
+                                    {% endif %}
+                                    {% else %}
+                                    <small class="text-muted">No data</small>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">There is no tracking data for this BJO yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.stage-box {
+    transition: all 0.2s ease;
+}
+
+.stage-box:hover {
+    background-color: #e9ecef !important;
+    transform: translateX(2px);
+}
+
+.stage-box .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3em 0.5em;
+}
+
+.stage-box small {
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.stage-box i {
+    display: inline-block;
+    text-align: center;
+}
+</style>

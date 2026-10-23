@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Edit Produksi</h2>
+
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="date" class="form-label">Tanggal</label>
+                <input type="date" name="date" value="{{ header.date }}" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label for="machine" class="form-label">Mesin</label>
+                <select name="machine" class="form-select" required>
+                    {% for item in machines %}
+                        <option value="{{ item.id }}" {% if item.id == header.machine.id %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="shift" class="form-label">Shift</label>
+                <select name="shift" class="form-select" required>
+                    {% for item in shifts %}
+                        <option value="{{ item.id }}" {% if item.id == header.shift.id %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label for="operator" class="form-label">Operator</label>
+                <select name="operator" class="form-select" required>
+                    {% for item in operators %}
+                        <option value="{{ item.id }}" {% if item.id == header.operator.id %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="booked_hours" class="form-label">Booked Hours</label>
+                <select name="booked_hours" class="form-select" required>
+                    {% for item in booked_hours %}
+                        <option value="{{ item.id }}" {% if item.id == header.booked_hours.id %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-12">
+                <label for="comment" class="form-label">Komentar</label>
+                <textarea name="comment" class="form-control">{{ header.comment }}</textarea>
+            </div>
+
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-success">Simpan Perubahan</button>
+                <a href="{% url 'production_list' %}" class="btn btn-secondary">Kembali</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

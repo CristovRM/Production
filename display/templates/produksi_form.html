@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% load static %}
+    {% load widget_tweaks %}
+
+
+    <h2>Form Input Produksi</h2>
+
+    <form method="post">
+    {% csrf_token %}
+    
+    {% for field in form %}
+        <div class="form-group mb-3">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+            <div class="text-danger">{{ field.errors }}</div>
+        {% endif %}
+        </div>
+    {% endfor %}
+
+    <div class="form-group mb-3">
+        <button type="button" class="btn btn-secondary" onclick="isiTimeStop()">STOP!</button>
+    </div>
+    </form>
+
+
+    <script>
+        function isiTimeStop() {
+            const now = new Date();
+            const jam = String(now.getHours()).padStart(2, '0');
+            const menit = String(now.getMinutes()).padStart(2, '0');
+            const detik = String(now.getSeconds()).padStart(2, '0');
+            const waktu = `${jam}:${menit}:${detik}`;
+            document.getElementById("id_time_stop").value = waktu;
+        }
+    </script>
+{% endblock %}

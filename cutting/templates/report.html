@@ -1,0 +1,43 @@
+<!-- Link ke Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+
+<h2 style="text-align: center; color: #2c3e50; margin-bottom: 30px; font-family: 'Lato', sans-serif;">
+    ✂️ Laporan Cutting Record
+</h2>
+
+<div style="border: 1px solid #bdc3c7; border-radius: 8px; padding: 20px; background-color: #fdfefe; font-family: 'Lato', sans-serif; font-size: 14px;">
+    <div style="margin-bottom: 20px;">
+        <p><strong>Tanggal:</strong> {{ selected_headers.created_at|date:"d M Y" }}</p>
+        <p><strong>Job Order:</strong> {{ selected_headers.bjo_protector.bjo }}</p>
+        <p><strong>Operator:</strong> {{ selected_headers.operator.name }}</p>
+        <p><strong>Shift:</strong> {{ selected_headers.shift.name }}</p>
+        <p><strong>Area Kerja:</strong> {{ selected_headers.station }}</p>
+    </div>
+
+    <hr style="border-top: 2px dashed #7f8c8d; margin-bottom: 20px;">
+
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+            <tr style="background-color: #ecf0f1; color: #34495e;">
+                <th style="padding: 10px; border: 1px solid #bdc3c7;">No.</th>
+                <th style="padding: 10px; border: 1px solid #bdc3c7;">Joint Number</th>
+                <th style="padding: 10px; border: 1px solid #bdc3c7;">Protector Number</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detail in selected_headers.cut_detail_set.all %}
+                <tr style="background-color: {% cycle '#ffffff' '#f9f9f9' %};">
+                    <td style="padding: 10px; border: 1px solid #ecf0f1; text-align: center;">{{ forloop.counter }}</td>
+                    <td style="padding: 10px; border: 1px solid #ecf0f1;">{{ detail.joint_number }}</td>
+                    <td style="padding: 10px; border: 1px solid #ecf0f1;">{{ detail.protector_number }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" style="padding: 15px; border: 1px solid #e74c3c; text-align: center; background-color: #fdecea; color: #c0392b;">
+                        Belum ada detail cutting.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

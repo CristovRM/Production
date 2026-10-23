@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- Link ke Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+
+<div class="container mt-4">
+    <div class="row align-items-center justify-content-between">
+        <div class="col-12 col-md-6 mb-2">
+            <h2 class="mb-3">Weld Final Report</h2>
+        </div>
+        <div class="col-12 col-md-6 text-md-end text-start mb-2">
+            <button class="btn btn-secondary text-uppercase me-2" onclick="window.print()">
+                <i class="fas fa-print me-1"></i> Print
+            </button>
+            <a class="btn btn-primary text-uppercase" href="{% url 'weldfinal_summary' %}">Kembali</a>
+        </div>
+    </div>
+
+    <h2 style="text-align: center; color: #2c3e50; margin-bottom: 30px; font-family: 'Lato', sans-serif;">
+        Laporan Weld Final
+    </h2>
+
+    <div style="border: 1px solid #bdc3c7; border-radius: 8px; padding: 20px; background-color: #fdfefe; font-family: 'Lato', sans-serif; font-size: 14px;">
+        <div style="margin-bottom: 20px;">
+            <p><strong>Date: </strong> {{ selected_header.created_at|date:"d M Y" }}</p>
+            <p><strong>Job Order: </strong> {{ selected_header.bjo.bjo }}</p>
+            <p><strong>Operator: </strong> {{ selected_header.operator.name }}</p>
+            <p><strong>Shift: </strong> {{ selected_header.shift.name }}</p>
+        </div>
+
+        <hr style="border-top: 2px dashed #7f8c8d; margin-bottom: 20px;">
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+                <tr style="background-color: #ecf0f1; color: #34495e;">
+                    <th style="padding: 10px; border: 1px solid #bdc3c7;">No.</th>
+                    <th style="padding: 10px; border: 1px solid #bdc3c7;">Joint No.</th>
+                    <th style="padding: 10px; border: 1px solid #bdc3c7;">Tally (inch)</th>
+                    <th style="padding: 10px; border: 1px solid #bdc3c7;">Bevel PIN</th>
+                    <th style="padding: 10px; border: 1px solid #bdc3c7;">Bevel BOX</th>
+                    <th style="padding: 10px; border: 1px solid #bdc3c7;">Grind PIN</th>
+                    <th style="padding: 10px; border: 1px solid #bdc3c7;">Grind BOX</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detail in details %}
+                    <tr style="background-color: {% cycle '#ffffff' '#f9f9f9' %};">
+                        <td style="padding: 10px; border: 1px solid #ecf0f1; text-align: center;">{{ forloop.counter }}</td>
+                        <td style="padding: 10px; border: 1px solid #ecf0f1;">{{ detail.joint_number.joint_number }}</td>
+                        <td style="padding: 10px; border: 1px solid #ecf0f1; text-align: center;">
+                            {{ detail.tally|default:"-" }}
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ecf0f1; text-align: center;">
+                            {% if detail.bevel_pin %}✓{% else %}✗{% endif %}
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ecf0f1; text-align: center;">
+                            {% if detail.bevel_box %}✓{% else %}✗{% endif %}
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ecf0f1; text-align: center;">
+                            {% if detail.grind_pin %}✓{% else %}✗{% endif %}
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ecf0f1; text-align: center;">
+                            {% if detail.grind_box %}✓{% else %}✗{% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" style="padding: 15px; border: 1px solid #e74c3c; text-align: center; background-color: #fdecea; color: #c0392b;">
+                            Belum ada detail weld final.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ecf0f1;">
+            <div style="display: flex; justify-content: space-between;">
+                <div style="text-align: center; width: 45%;">
+                    <p style="margin-bottom: 60px;"><strong>Operator</strong></p>
+                    <p style="border-top: 1px solid #34495e; padding-top: 5px;">{{ selected_header.operator.name }}</p>
+                </div>
+                <div style="text-align: center; width: 45%;">
+                    <p style="margin-bottom: 60px;"><strong>Supervisor</strong></p>
+                    <p style="border-top: 1px solid #34495e; padding-top: 5px;">( ________________ )</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .btn, .row.align-items-center {
+            display: none !important;
+        }
+        body {
+            font-family: 'Lato', sans-serif;
+        }
+    }
+
+    .badge {
+        padding: 0.5em 0.75em;
+        font-size: 0.875em;
+    }
+</style>
+
+{% endblock %}

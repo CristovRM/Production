@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bevel Navigation Menu</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav id="app-nav-main" class="app-nav app-nav-main flex-grow-1">
+    <ul class="app-menu list-unstyled accordion" id="menu-accordion">
+        
+        <!-- Bevel Menu -->
+        {% if can_access_bevel %}
+        <li class="nav-item">
+            <a class="nav-link d-flex justify-content-between align-items-center {% if active_menu in 'bevel_list bevel_consumption_list bevel_ncr_list' %}active{% endif %}"
+               data-bs-toggle="collapse" 
+               href="#bevelMenu" 
+               role="button" 
+               aria-expanded="{% if active_menu in 'bevel_list bevel_consumption_list bevel_ncr_list' %}true{% else %}false{% endif %}" 
+               aria-controls="bevelMenu">
+                <span>
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder2" viewBox="0 0 16 16">
+                            <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h2.764c.958 0 1.76.56 2.311 1.184C7.985 3.648 8.48 4 9 4h4.5A1.5 1.5 0 0 1 15 5.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5zM2.5 3a.5.5 0 0 0-.5.5V6h12v-.5a.5.5 0 0 0-.5-.5H9c-.964 0-1.71-.629-2.174-1.154C6.374 3.334 5.82 3 5.264 3zM14 7H2v5.5a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-link-text">Bevel</span>
+                </span>
+                <span class="accordion-arrow">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </span>
+            </a>
+            <div class="collapse {% if active_menu in 'bevel_list bevel_consumption_list bevel_ncr_list' %}show{% endif %}"
+                 id="bevelMenu" 
+                 data-bs-parent="#menu-accordion">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                    <li>
+                        <a href="{% url 'bevel_list' %}" class="nav-link {% if active_menu == 'bevel_list' %}active{% endif %}">
+                            <span class="nav-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8"/>
+                                </svg>
+                            </span>
+                            Beveling
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'bevel_consumption_list' %}" class="nav-link {% if active_menu == 'bevel_consumption_list' %}active{% endif %}">
+                            <span class="nav-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8"/>
+                                </svg>
+                            </span>
+                            Bevel Consumption
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'bevel_ncr_list' %}" class="nav-link {% if active_menu == 'bevel_ncr_list' %}active{% endif %}">
+                            <span class="nav-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8"/>
+                                </svg>
+                            </span>
+                            Bevel NCR
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </li>
+        {% endif %}
+
+    </ul><!--//app-menu-->
+</nav><!--//app-nav-->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all dropdown toggles
+    const dropdownToggles = document.querySelectorAll('[data-toggle]');
+    
+    // Get all nav links for page navigation
+    const navLinks = document.querySelectorAll('[data-page]');
+    
+    // Handle dropdown toggle functionality
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const targetId = this.getAttribute('data-toggle');
+            const targetSubmenu = document.getElementById(targetId);
+            const arrow = this.querySelector('.dropdown-arrow');
+            
+            // Check if this dropdown is currently open
+            const isOpen = targetSubmenu.classList.contains('show');
+            
+            // Close all dropdowns first
+            closeAllDropdowns();
+            
+            // If it wasn't open, open it
+            if (!isOpen) {
+                targetSubmenu.classList.add('show');
+                arrow.classList.add('rotated');
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    function closeAllDropdowns() {
+        document.querySelectorAll('.collapse').forEach(function(submenu) {
+            submenu.classList.remove('show');
+        });
+        document.querySelectorAll('.accordion-arrow').forEach(function(arrow) {
+            arrow.classList.remove('rotated');
+        });
+        document.querySelectorAll('[data-toggle]').forEach(function(toggle) {
+            toggle.classList.remove('active');
+        });
+    }
+});
+</script>
+</body>
+</html>

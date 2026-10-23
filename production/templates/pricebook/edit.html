@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block title %}Edit pricebook data{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">Edit Price Book</div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Process Type -->
+                <div class="mb-3">
+                    <label class="form-label">Process Type</label>
+                    <select name="process_type" id="process_type" class="form-control" required>
+                        <option value="">-- Pilih Process Type --</option>
+                        {% for p in processes %}
+                            <option value="{{ p.id }}" 
+                                    data-rate="{{ p.rate }}"
+                                    data-name="{{ p.name }}"
+                                    {% if selected_process and selected_process == p.id|stringformat:"s" %}selected
+                                    {% elif not selected_process and item.process_type and item.process_type.id == p.id %}selected{% endif %}>
+                                {{ p.name }} (Rate: {{ p.rate|floatformat:2 }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- OD Thickness -->
+                <div class="mb-3">
+                    <label class="form-label">OD Thickness</label>
+                    <select name="od_thickness" id="od_thickness" class="form-control" required>
+                        <option value="">-- Pilih OD Thickness --</option>
+                        {% for o in od_thicknesses %}
+                            <option value="{{ o.id }}"
+                                    {% if selected_od_thickness and selected_od_thickness == o.id|stringformat:"s" %}selected
+                                    {% elif not selected_od_thickness and item.od_thickness and item.od_thickness.id == o.id %}selected{% endif %}>
+                                {{ o.process_type.name }} - {{ o.size }} (OD: {{ o.od }}, Wall: {{ o.wall }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">OD Thickness akan ditampilkan sesuai Process Type yang dipilih</small>
+                </div>
+
+                <!-- PB For -->
+                <div class="mb-3">
+                    <label class="form-label">PB For</label>
+                    <select name="pb_for" class="form-control">
+                        <option value="">-- Pilih Material Grade --</option>
+                        {% for m in material_grades %}
+                            <option value="{{ m.id }}"
+                                    {% if selected_pb_for and selected_pb_for == m.id|stringformat:"s" %}selected
+                                    {% elif not selected_pb_for and item.pb_for and item.pb_for.id == m.id %}selected{% endif %}>
+                                {{ m.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Time in Hours -->
+                <div class="mb-3">
+                    <label class="form-label">Time (Hours)</label>
+                    <input type="number" step="0.01" name="time_in_h" id="time_in_h" class="form-control" 
+                           value="{% if time_in_h %}{{ time_in_h }}{% else %}{{ item.time_in_h }}{% endif %}">
+                </div>
+
+                <!-- Cost Per End -->
+                <div class="mb-3">
+                    <label class="form-label">Cost Per End (Time × Rate)</label>
+                    <input type="number" step="0.01" name="cost_per_end" id="cost_per_end" class="form-control" 
+                           value="{{ item.cost_per_end }}" readonly style="background-color: #f8f9fa;">
+                    <small class="form-text text-muted">Otomatis: Time × Rate</small>
+                </div>
+
+                <!-- Cost Per Joint -->
+                <div class="mb-3">
+                    <label class="form-label">Cost Per Joint (End × 2)</label>
+                    <input type="number" step="0.01" name="cost_per_joint" id="cost_per_joint" class="form-control" 
+                           value="{{ item.cost_per_joint }}" readonly style="background-color: #f8f9fa;">
+                    <small class="form-text text-muted">Otomatis: Cost Per End × 2</small>
+                </div>
+
+                <!-- Cost VTL -->
+                <div class="mb-3">
+                    <label class="form-label">Cost VTL (Time × Rate)</label>
+                    <input type="number" step="0.01" name="cost_vtl" id="cost_vtl" class="form-control" 
+                           value="{{ item.cost_vtl }}" readonly style="background-color: #f8f9fa;">
+                    <small class="form-text text-muted">Otomatis: Time × Rate (sama dengan Cost Per End)</small>
+                </div>
+
+                <!-- Remarks -->
+                <div class="mb-3">
+                    <label class="form-label">Remarks</label>
+                    <textarea name="remarks" class="form-control">{% if remarks %}{{ remarks }}{% else %}{{ item.remarks }}{% endif %}</textarea>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success">Simpan Perubahan</button>
+                    <a href="{% url 'pricebook_list' %}" class="btn btn-secondary">Batal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const processSelect = document.getElementById('process_type');
+    const odThicknessSelect = document.getElementById('od_thickness');
+    const timeInput = document.getElementById('time_in_h');
+    const costPerEndInput = document.getElementById('cost_per_end');
+    const costPerJointInput = document.getElementById('cost_per_joint');
+    const costVtlInput = document.getElementById('cost_vtl');
+
+    // Store current OD Thickness selection
+    let currentOdThickness = odThicknessSelect.value;
+
+    // Function to calculate costs
+    function calculateCosts() {
+        const selectedOption = processSelect.options[processSelect.selectedIndex];
+        const rate = parseFloat(selectedOption.getAttribute('data-rate')) || 0;
+        const time = parseFloat(timeInput.value) || 0;
+        
+        const costPerEnd = rate * time;
+        const costPerJoint = costPerEnd * 2;
+        const costVtl = costPerEnd; // Same as cost per end
+        
+        costPerEndInput.value = costPerEnd.toFixed(2);
+        costPerJointInput.value = costPerJoint.toFixed(2);
+        costVtlInput.value = costVtl.toFixed(2);
+    }
+
+    // Function to load OD Thickness based on Process Type
+    function loadOdThickness(processTypeId, selectedOdThickness = null) {
+        // Clear current options except the first one
+        odThicknessSelect.innerHTML = '<option value="">-- Pilih OD Thickness --</option>';
+        
+        if (!processTypeId) {
+            return;
+        }
+
+        // Get process type name from selected option
+        const selectedOption = processSelect.options[processSelect.selectedIndex];
+        const processTypeName = selectedOption.getAttribute('data-name') || '';
+
+        // Create URL for AJAX request
+        const url = new URL('{% url "get_od_thickness_by_process" %}', window.location.origin);
+        url.searchParams.append('process_type_id', processTypeId);
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                // Add new options with process type name prefix
+                data.od_thicknesses.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = `${processTypeName} - ${item.text}`;
+                    
+                    // Select the option if it matches the selected OD thickness
+                    if (selectedOdThickness && item.id == selectedOdThickness) {
+                        option.selected = true;
+                    }
+                    
+                    odThicknessSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading OD Thickness:', error);
+            });
+    }
+
+    // Event listeners
+    processSelect.addEventListener('change', function() {
+        const processTypeId = this.value;
+        loadOdThickness(processTypeId);
+        calculateCosts();
+    });
+
+    timeInput.addEventListener('input', calculateCosts);
+
+    // Initial calculation when page loads
+    calculateCosts();
+
+    // Load OD Thickness if Process Type is already selected
+    if (processSelect.value) {
+        loadOdThickness(processSelect.value, currentOdThickness);
+    }
+});
+</script>
+{% endblock %}

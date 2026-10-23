@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% block title %}Edit BJO{% endblock%}
+{% block content %}
+<style>
+    .critical-field {
+        position: relative;
+    }
+    .critical-field .form-label {
+        color: #dc3545 !important;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .critical-field .form-label i {
+        color: #ff6b35;
+        animation: pulse 2s infinite;
+    }
+    .critical-field .form-select {
+        border: 2px solid #ffc107 !important;
+        background-color: #fff9c4 !important;
+        transition: all 0.3s ease;
+    }
+    .critical-field .form-select:focus {
+        border-color: #ff6b35 !important;
+        box-shadow: 0 0 0 0.25rem rgba(255, 107, 53, 0.25) !important;
+        background-color: #fff !important;
+    }
+    .critical-field .form-select.is-valid {
+        border-color: #198754 !important;
+        background-color: #d1e7dd !important;
+    }
+    .warning-text {
+        font-size: 0.85em;
+        color: #dc3545;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 500;
+    }
+    .warning-text i {
+        color: #ffc107;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    .edit-warning-info {
+        background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+        border: 2px solid #ff9800;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    /* Composite checkbox styling */
+    .composite-field {
+        background-color: #f0f4ff;
+        border: 1px solid #c7d7f9;
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .composite-field:hover {
+        background-color: #e0e9ff;
+    }
+    .composite-field input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #0d6efd;
+        flex-shrink: 0;
+    }
+    .composite-field label {
+        margin: 0;
+        font-weight: 600;
+        color: #1a3c8f;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+    .composite-field small {
+        color: #6c757d;
+        font-size: 0.78rem;
+    }
+</style>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Edit Job Order</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <!-- Baris 1 -->
+            <div class="col-12 col-md-6">
+                <label for="bjo" class="form-label">BJO</label>
+                <input type="text" name="bjo" class="form-control" value="{{ header.bjo }}" required>
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="bt" class="form-label">BT</label>
+                <input type="text" name="bt" class="form-control" value="{{ header.bt }}">
+            </div>
+
+            <!-- Baris 2 -->
+            <div class="col-12 col-md-6">
+                <label for="customer" class="form-label">Customer</label>
+                <input type="text" name="customer" class="form-control" value="{{ header.customer }}">
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="product" class="form-label">Description</label>
+                <input type="text" name="product" class="form-control" value="{{ header.product }}">
+            </div>
+
+            <!-- Baris 3 -->
+            <div class="col-12 col-md-6">
+                <label for="qty" class="form-label">Qty (joints)</label>
+                <input type="number" name="qty" step="0.01" class="form-control" value="{{ header.qty }}" required>
+            </div>
+            <div class="col-12 col-md-6 critical-field">
+                <label for="bjo_for" class="form-label">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    BJO For
+                </label>
+                <select name="bjo_for" class="form-select" id="bjo_for">
+                    <option value="">-- Select --</option>
+                    {% for value, label in bjo_for_choices %}
+                        <option value="{{ value }}" {% if header.bjo_for == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <div class="warning-text">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Make sure the selection is correct, this data is very important.
+                </div>
+            </div>
+
+            <!-- Baris 4 -->
+            <div class="col-12 col-md-6">
+                <label for="size" class="form-label">Size</label>
+                <select name="size" class="form-select">
+                    <option value="">-- Select Size --</option>
+                    {% for item in size_list %}
+                        <option value="{{ item.id }}" {% if header.size and header.size.id == item.id %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-6 critical-field">
+                <label for="conn" class="form-label">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Connection
+                </label>
+                <select name="conn" class="form-select" id="conn">
+                    <option value="">-- Select Connection --</option>
+                    {% for item in conn_list %}
+                        <option value="{{ item.id }}" {% if header.conn and header.conn.id == item.id %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+                <div class="warning-text">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Make sure the selection is correct, this data is very important.
+                </div>
+            </div>
+
+            <!-- Baris 5 -->
+            <div class="col-12 col-md-6">
+                <label for="info" class="form-label">Info Tag</label>
+                <select name="info" class="form-select">
+                    <option value="">-- Select Info --</option>
+                    {% for item in info_list %}
+                        <option value="{{ item.id }}" {% if header.info and header.info.id == item.id %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-6 critical-field">
+                <label for="ct_reference" class="form-label">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    CT References
+                </label>
+                <select name="ct_reference" class="form-select" id="ct_reference">
+                    <option value="">-- Select Grade --</option>
+                    {% for item in grade_list %}
+                        <option value="{{ item.id }}" {% if header.ct_reference and header.ct_reference.id == item.id %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+                <div class="warning-text">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Make sure the selection is correct, this data is very important.
+                </div>
+            </div>
+
+            <!-- Baris 6 - Process & Type Order -->
+            <div class="col-12 col-md-6 critical-field">
+                <label for="process_type" class="form-label">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Process
+                </label>
+                <select name="process_type" class="form-select" id="process_type">
+                    <option value="">-- Select Process --</option>
+                    {% for item in process_list %}
+                        <option value="{{ item.id }}" {% if header.process_type and header.process_type.id == item.id %}selected{% endif %}>{{ item }}</option>
+                    {% endfor %}
+                </select>
+                <div class="warning-text">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Make sure the selection is correct, this data is very important.
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="type_order" class="form-label">XL-100 Type</label>
+                <select name="type_order" class="form-select">
+                    <option value="">-- Select Type --</option>
+                    {% for value, label in type_order_choices %}
+                        <option value="{{ value }}" {% if header.type_order == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Baris 7 - Lube & Dates -->
+            <div class="col-12 col-md-4">
+                <label for="lube" class="form-label">Lube</label>
+                <input type="text" name="lube" class="form-control" value="{{ header.lube }}" placeholder="e.g., API Modified">
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control" value="{{ header.start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-12 col-md-4">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control" value="{{ header.end_date|date:'Y-m-d' }}">
+            </div>
+
+            <!-- Baris 8 - Composite -->
+            <div class="col-12">
+                <div class="composite-field" onclick="document.getElementById('is_composite').click()">
+                    <input type="checkbox" name="is_composite" id="is_composite"
+                           {% if header.is_composite %}checked{% endif %}
+                           onclick="event.stopPropagation()">
+                    <div>
+                        <label for="is_composite">Composite</label>
+                        <br>
+                        <small>Centang jika job order ini merupakan pekerjaan Composite</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-success text-uppercase" id="submit_btn">Save</button>
+            <a href="{% url 'joborder_list' %}" class="btn btn-secondary">Back</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validasi critical fields sebelum submit
+    document.getElementById('submit_btn').addEventListener('click', function(e) {
+        const criticalFields = [
+            { id: 'bjo_for', name: 'BJO For' },
+            { id: 'conn', name: 'Connection' },
+            { id: 'ct_reference', name: 'CT References' },
+            { id: 'process_type', name: 'Process' }
+        ];
+        
+        let emptyFields = [];
+        
+        criticalFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element && element.value === '') {
+                emptyFields.push(field.name);
+                element.classList.add('is-invalid');
+            } else if (element) {
+                element.classList.add('is-valid');
+                element.classList.remove('is-invalid');
+            }
+        });
+        
+        if (emptyFields.length > 0) {
+            e.preventDefault();
+            alert(`⚠️ ATTENTION!\n\nThe following fields are not filled in and are very important:\n\n${emptyFields.map(field => '• ' + field).join('\n')}\n\nMake sure all critical fields are selected correctly!`);
+        } else {
+            const confirmation = confirm('⚠️ CONFIRM EDIT\n\nYou will change the Job Order data.\nMake sure the changes to the critical fields (BJO For, Connection, CT References, Process) have been confirmed with the relevant team.\n\nContinue?');
+            if (!confirmation) {
+                e.preventDefault();
+            }
+        }
+    });
+
+    // Real-time validation untuk critical fields
+    const criticalFieldIds = ['bjo_for', 'conn', 'ct_reference', 'process_type'];
+    
+    criticalFieldIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', function() {
+                if (this.value !== '') {
+                    this.classList.add('is-valid');
+                    this.classList.remove('is-invalid');
+                } else {
+                    this.classList.remove('is-valid');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

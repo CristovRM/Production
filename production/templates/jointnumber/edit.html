@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% block title %}Edit Joint/Pipe Number{% endblock%}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Edit Joint Number</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if joint.is_used %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Perhatian:</strong> Joint Number ini sudah digunakan dan tidak dapat diedit.
+        </div>
+        
+        <div class="card p-3" style="background-color: #f8f9fa;">
+            <div class="mb-3">
+                <label class="form-label fw-bold">BJO (Read Only)</label>
+                <div class="form-control-plaintext">
+                    {% if joint.bjo %}
+                        bjo: {{ joint.bjo.bjo }} | {{ joint.bjo.customer }} | {{ joint.bjo.product }} | qty: {{ joint.bjo.qty }}
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Joint Number (Read Only)</label>
+                <div class="form-control-plaintext fw-bold">{{ joint.joint_number }}</div>
+            </div>
+        </div>
+    {% else %}
+        <form method="post" class="card p-3">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">Pilih BJO</label>
+                <select name="bjo" class="form-select" required id="bjo-select">
+                    <option value="">-- Pilih BJO --</option>
+                    {% for item in jobheaders %}
+                        <option value="{{ item.id }}" 
+                                data-remaining="{{ item.remaining_slots }}"
+                                data-qty="{{ item.qty }}"
+                                data-existing="{{ item.existing_count }}"
+                                {% if item.remaining_slots <= 0 and item != joint.bjo %}disabled{% endif %}
+                                {% if item == joint.bjo %}selected{% endif %}>
+                            bjo: {{ item.bjo }} | {{ item.customer }} | {{ item.product }} | 
+                            qty: {{ item.qty }} | tersisa: {{ item.remaining_slots }}
+                            {% if item.remaining_slots <= 0 and item != joint.bjo %} (PENUH){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text mt-2">
+                    <small id="remaining-info" class="text-muted"></small>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Joint Number</label>
+                <input type="text" name="joint_number" class="form-control" value="{{ joint.joint_number }}" required>
+            </div>
+    {% endif %}
+
+        <!-- Informasi Status (read-only) -->
+        <div class="mb-4">
+            <h5 class="mb-3">Status Joint Number</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card border-0" style="background-color: #f8f9fa;">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold">Box Threaded</label>
+                            <div>
+                                <span class="{% if joint.is_box_threaded %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    {% if joint.is_box_threaded %}✔ Sudah{% else %}✘ Belum{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-0" style="background-color: #f8f9fa;">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold">Pin Threaded</label>
+                            <div>
+                                <span class="{% if joint.is_pin_threaded %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    {% if joint.is_pin_threaded %}✔ Sudah{% else %}✘ Belum{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-0" style="background-color: #f8f9fa;">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold">Box Phosphated</label>
+                            <div>
+                                <span class="{% if joint.is_box_phosphated %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    {% if joint.is_box_phosphated %}✔ Sudah{% else %}✘ Belum{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-0" style="background-color: #f8f9fa;">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold">Pin Phosphated</label>
+                            <div>
+                                <span class="{% if joint.is_pin_phosphated %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    {% if joint.is_pin_phosphated %}✔ Sudah{% else %}✘ Belum{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-0" style="background-color: #f8f9fa;">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold">Used</label>
+                            <div>
+                                <span class="{% if joint.is_used %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    {% if joint.is_used %}✔ Ya{% else %}✘ Tidak{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-0" style="background-color: #f8f9fa;">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold">NCR</label>
+                            <div>
+                                <span class="{% if joint.is_ncr %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    {% if joint.is_ncr %}✔ Ya{% else %}✘ Tidak{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end">
+            {% if not joint.is_used %}
+                <a href="{% url 'jointnumber_list' %}" class="btn btn-secondary me-2">Kembali</a>
+                <button type="submit" class="btn btn-success" id="submit-btn">Simpan</button>
+            {% else %}
+                <a href="{% url 'jointnumber_list' %}" class="btn btn-secondary">Kembali</a>
+            {% endif %}
+        </div>
+    {% if not joint.is_used %}
+        </form>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Hanya jalankan script jika joint number belum digunakan
+    if (document.getElementById('bjo-select')) {
+        const bjoSelect = document.getElementById('bjo-select');
+        const remainingInfo = document.getElementById('remaining-info');
+        const submitBtn = document.getElementById('submit-btn');
+
+        function updateBjoInfo() {
+            const selectedOption = bjoSelect.options[bjoSelect.selectedIndex];
+            
+            if (selectedOption.value === '') {
+                remainingInfo.textContent = '';
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const remaining = parseInt(selectedOption.getAttribute('data-remaining') || '0');
+            const qty = parseInt(selectedOption.getAttribute('data-qty') || '0');
+            const existing = parseInt(selectedOption.getAttribute('data-existing') || '0');
+            
+            if (remaining > 0 || selectedOption.hasAttribute('selected')) {
+                remainingInfo.innerHTML = `
+                    <span class="text-success">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Sisa slot yang dapat ditambahkan: <strong>${remaining}</strong> 
+                        (${existing}/${qty} sudah terisi)
+                    </span>
+                `;
+                submitBtn.disabled = false;
+            } else {
+                remainingInfo.innerHTML = `
+                    <span class="text-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        BJO ini sudah penuh, tidak dapat dipilih 
+                        (${existing}/${qty})
+                    </span>
+                `;
+                submitBtn.disabled = true;
+            }
+        }
+
+        // Event listeners
+        bjoSelect.addEventListener('change', updateBjoInfo);
+        
+        // Initialize pada load
+        updateBjoInfo();
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const selectedOption = bjoSelect.options[bjoSelect.selectedIndex];
+            const remaining = parseInt(selectedOption.getAttribute('data-remaining') || '0');
+            
+            // Allow submission if it's the current BJO (even if remaining is 0)
+            if (remaining <= 0 && !selectedOption.hasAttribute('selected')) {
+                e.preventDefault();
+                alert('BJO yang dipilih sudah penuh!');
+                return false;
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.alert i {
+    vertical-align: middle;
+}
+
+#remaining-info {
+    font-size: 0.9rem;
+}
+
+.form-select option:disabled {
+    color: #6c757d !important;
+    background-color: #f8f9fa !important;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card .card-body {
+    border-radius: 0.375rem;
+}
+
+.fw-bold {
+    font-weight: 600 !important;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends 'joborder/report_xl100_wbase.html' %}
+
+{% block form_type_badge %}XL-100BB-2 REV 0{% endblock %}
+
+{% block extra_style %}
+<style>
+    .tracking-table {
+        font-size: 9px;
+    }
+
+    .row-number {
+        width: 20px;
+        font-size: 8px;
+    }
+
+    .joint-col {
+        width: 60px;
+        font-size: 9px;
+    }
+
+    .date-col {
+        width: 60px;
+        font-size: 8px;
+    }
+
+    .welder-col {
+        width: 65px;
+        font-size: 8px;
+    }
+
+    .forging-col {
+        width: 75px;
+        font-size: 8px;
+    }
+
+    .bevel-col {
+        width: 50px;
+        font-size: 8px;
+    }
+
+    .grind-col {
+        width: 50px;
+        font-size: 8px;
+    }
+
+    .tally-col {
+        width: 45px;
+        font-size: 8px;
+    }
+
+    .header-row th {
+        font-size: 8px;
+        padding: 4px 2px;
+        line-height: 1.2;
+    }
+
+    .data-row td {
+        padding: 4px 2px;
+        font-size: 8px;
+    }
+
+    .table-wrapper {
+        margin-bottom: 25px;
+    }
+</style>
+{% endblock %}
+
+{% block table_content %}
+
+{# ===== TABEL 1: BOX FORGING + PIN FORGING ===== #}
+<div class="table-wrapper">
+    <table class="tracking-table" id="tableForging">
+        <thead>
+            <tr class="header-row">
+                <th rowspan="2" class="row-number">#</th>
+                <th rowspan="2" class="joint-col">Joint #</th>
+                <th colspan="3">Scan Oper #</th>
+                <th colspan="3">Scan Oper #</th>
+                <th colspan="4">Scan Oper #</th>
+                <th rowspan="2" class="tally-col">Tally</th>
+            </tr>
+            <tr class="header-row">
+                <th class="date-col">Date</th>
+                <th class="welder-col">Welder</th>
+                <th class="forging-col">Box Forging#</th>
+                <th class="date-col">Date</th>
+                <th class="welder-col">Welder</th>
+                <th class="forging-col">Pin Forging#</th>
+                <th class="bevel-col">Bevel Pin</th>
+                <th class="bevel-col">Bevel Box</th>
+                <th class="grind-col">Grind Pin</th>
+                <th class="grind-col">Grind Box</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in joint_tracking %}
+            <tr class="data-row">
+                <td class="row-number">{{ forloop.counter }}</td>
+                <td>{{ item.joint_number|default:"" }}</td>
+                <td>{{ item.box_date|date:"d M Y"|default:"" }}</td>
+                <td>{{ item.box_welder|default:"" }}</td>
+                <td>{{ item.box_forging|default:"" }}</td>
+                <td>{{ item.pin_date|date:"d M Y"|default:"" }}</td>
+                <td>{{ item.pin_welder|default:"" }}</td>
+                <td>{{ item.pin_forging|default:"" }}</td>
+                <td>{% if item.bevel_pin %}{{ item.bevel_pin_operator|default:"" }}{% endif %}</td>
+                <td>{% if item.bevel_box %}{{ item.bevel_box_operator|default:"" }}{% endif %}</td>
+                <td>{% if item.grind_pin %}{{ item.grind_pin_operator|default:"" }}{% endif %}</td>
+                <td>{% if item.grind_box %}{{ item.grind_box_operator|default:"" }}{% endif %}</td>
+                <td>{{ item.tally|default:"" }}</td>
+            </tr>
+            {% empty %}
+            <tr class="data-row">
+                <td colspan="13" class="text-center">No data available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ===== TABEL 2: FLOAT COLLAR BOX SIDE + FLOAT COLLAR PIN SIDE ===== #}
+<div class="table-wrapper">
+    <table class="tracking-table" id="tableFloatCollar">
+        <thead>
+            <tr class="header-row">
+                <th rowspan="2" class="row-number">#</th>
+                <th rowspan="2" class="joint-col">Joint #</th>
+                <th colspan="3">Scan Oper #</th>
+                <th colspan="3">Scan Oper #</th>
+                <th colspan="4">Scan Oper #</th>
+                <th rowspan="2" class="tally-col">Tally</th>
+            </tr>
+            <tr class="header-row">
+                <th class="date-col">Date</th>
+                <th class="welder-col">Welder</th>
+                <th class="forging-col">Box side<br>Float Collar#</th>
+                <th class="date-col">Date</th>
+                <th class="welder-col">Welder</th>
+                <th class="forging-col">Pin side<br>Float Collar#</th>
+                <th class="bevel-col">Bevel Pin</th>
+                <th class="bevel-col">Bevel Box</th>
+                <th class="grind-col">Grind Pin</th>
+                <th class="grind-col">Grind Box</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in joint_tracking %}
+            <tr class="data-row">
+                <td class="row-number">{{ forloop.counter }}</td>
+                <td>{{ item.joint_number|default:"" }}</td>
+                <td>{{ item.fcbs_date|date:"d M Y"|default:"" }}</td>
+                <td>{{ item.fcbs_welder|default:"" }}</td>
+                <td>{{ item.box_side|default:"" }}</td>
+                <td>{{ item.fcps_date|date:"d M Y"|default:"" }}</td>
+                <td>{{ item.fcps_welder|default:"" }}</td>
+                <td>{{ item.pin_side|default:"" }}</td>
+                <td>{% if item.bevel_pin %}{{ item.bevel_pin_operator|default:"" }}{% endif %}</td>
+                <td>{% if item.bevel_box %}{{ item.bevel_box_operator|default:"" }}{% endif %}</td>
+                <td>{% if item.grind_pin %}{{ item.grind_pin_operator|default:"" }}{% endif %}</td>
+                <td>{% if item.grind_box %}{{ item.grind_box_operator|default:"" }}{% endif %}</td>
+                <td>{{ item.tally|default:"" }}</td>
+            </tr>
+            {% empty %}
+            <tr class="data-row">
+                <td colspan="13" class="text-center">No data available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

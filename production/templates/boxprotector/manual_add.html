@@ -1,0 +1,410 @@
+{% extends 'base.html' %}
+{% block title %}Create BOX protector number{% endblock%}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Input Manual Box Protector</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show auto-hide-alert" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label class="form-label">Pilih BJO <small class="text-muted">(type to search)</small></label>
+            <div class="searchable-select" id="bjo_searchable">
+                <input type="text" 
+                       id="bjo_search" 
+                       class="form-control searchable-input" 
+                       placeholder="Type to search BJO..." 
+                       autocomplete="off">
+                <div class="searchable-dropdown" id="bjo_dropdown">
+                    <div class="dropdown-item" data-value="" data-remaining="0" data-qty="0" data-existing="0">
+                        -- Pilih BJO --
+                    </div>
+                    
+                    <!-- BJO yang masih tersedia (available) -->
+                    {% for item in jobheaders %}
+                        {% if item.remaining_slots > 0 %}
+                            <div class="dropdown-item" 
+                                 data-value="{{ item.id }}"
+                                 data-remaining="{{ item.remaining_slots }}"
+                                 data-qty="{{ item.qty }}"
+                                 data-existing="{{ item.existing_count }}">
+                                bjo: {{ item.bjo }} | {{ item.customer }} | {{ item.product }} | qty: {{ item.qty }} | tersisa: {{ item.remaining_slots }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <!-- Separator -->
+                    <div class="dropdown-separator">────────────────────────</div>
+                    
+                    <!-- BJO yang sudah penuh (disabled) -->
+                    {% for item in jobheaders %}
+                        {% if item.remaining_slots <= 0 %}
+                            <div class="dropdown-item disabled-item" 
+                                 data-value="{{ item.id }}"
+                                 data-remaining="{{ item.remaining_slots }}"
+                                 data-qty="{{ item.qty }}"
+                                 data-existing="{{ item.existing_count }}"
+                                 data-disabled="true">
+                                bjo: {{ item.bjo }} | {{ item.customer }} | {{ item.product }} | qty: {{ item.qty }} | tersisa: {{ item.remaining_slots }} (PENUH)
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="bjo" id="bjo_hidden" required>
+            </div>
+            <div class="form-text mt-2">
+                <small id="remaining-info" class="text-muted"></small>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Serial Number</label>
+            <input type="text" name="serial_number" class="form-control" required placeholder="Contoh: BOX 001">
+            <div class="form-text">
+                <small class="text-muted">Format bebas, contoh: BOX 001, PROT-001, dll.</small>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <a href="{% url 'boxprotector_list' %}" class="btn btn-secondary me-2">Kembali</a>
+            <button type="submit" class="btn btn-primary" id="submit-btn">
+                <i class="fas fa-save me-1"></i> Simpan Manual
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+/* Searchable Select Styling */
+.searchable-select {
+    position: relative;
+}
+
+.searchable-input {
+    cursor: pointer;
+    text-align: left !important;
+}
+
+.searchable-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1050;
+    display: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin-top: 2px;
+}
+
+.dropdown-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.15s ease;
+}
+
+.dropdown-item:hover:not(.disabled-item):not(.dropdown-separator) {
+    background-color: #e9ecef;
+}
+
+.dropdown-item.selected {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 500;
+}
+
+.dropdown-item.disabled-item {
+    color: #dc3545;
+    font-style: italic;
+    cursor: not-allowed;
+    background-color: #f8f9fa;
+}
+
+.dropdown-item.disabled-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-separator {
+    padding: 8px 12px;
+    text-align: center;
+    color: #adb5bd;
+    font-size: 0.8rem;
+    cursor: default;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.no-results {
+    padding: 12px;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.searchable-input.has-value {
+    background-color: #d4edda;
+    font-weight: 500;
+}
+
+/* Custom alert styles */
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-error, .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info {
+    background-color: #cce8f4;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.alert.fade {
+    transition: opacity 0.5s ease-out;
+}
+
+.alert i {
+    vertical-align: middle;
+}
+
+#remaining-info {
+    font-size: 0.9rem;
+}
+
+.btn i {
+    vertical-align: middle;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 2500);
+    });
+
+    class SearchableSelect {
+        constructor(containerSelector, options = {}) {
+            this.container = document.querySelector(containerSelector);
+            if (!this.container) return;
+            
+            this.input = this.container.querySelector('.searchable-input');
+            this.dropdown = this.container.querySelector('.searchable-dropdown');
+            this.hiddenInput = this.container.querySelector('input[type="hidden"]');
+            
+            this.onSelect = options.onSelect || function() {};
+            this.originalItems = [];
+            this.selectedValue = '';
+            this.selectedText = '';
+            this.selectedData = {};
+            
+            this.init();
+        }
+        
+        init() {
+            this.originalItems = Array.from(this.dropdown.children).map(item => ({
+                element: item.cloneNode(true),
+                value: item.dataset.value,
+                text: item.textContent.trim().toLowerCase(),
+                originalText: item.textContent.trim(),
+                remaining: item.dataset.remaining,
+                qty: item.dataset.qty,
+                existing: item.dataset.existing,
+                disabled: item.dataset.disabled === 'true',
+                isSeparator: item.classList.contains('dropdown-separator')
+            }));
+            
+            this.setupEvents();
+        }
+        
+        setupEvents() {
+            this.input.addEventListener('focus', () => this.showDropdown());
+            this.input.addEventListener('blur', () => setTimeout(() => this.hideDropdown(), 200));
+            this.input.addEventListener('input', () => this.filterItems());
+            document.addEventListener('click', (e) => {
+                if (!this.container.contains(e.target)) this.hideDropdown();
+            });
+        }
+        
+        showDropdown() {
+            this.dropdown.style.display = 'block';
+            this.filterItems();
+        }
+        
+        hideDropdown() {
+            this.dropdown.style.display = 'none';
+        }
+        
+        filterItems() {
+            const searchTerm = this.input.value.toLowerCase().trim();
+            this.dropdown.innerHTML = '';
+            
+            let visibleCount = 0;
+            let hasAvailable = false;
+            let hasDisabled = false;
+            
+            this.originalItems.forEach(item => {
+                if (!item.isSeparator && (searchTerm === '' || item.text.includes(searchTerm))) {
+                    if (!item.disabled) hasAvailable = true;
+                    if (item.disabled) hasDisabled = true;
+                }
+            });
+            
+            this.originalItems.forEach((item) => {
+                if (item.isSeparator) {
+                    if (hasAvailable && hasDisabled) {
+                        const separator = document.createElement('div');
+                        separator.className = 'dropdown-separator';
+                        separator.textContent = '────────────────────────';
+                        this.dropdown.appendChild(separator);
+                    }
+                    return;
+                }
+                
+                if (searchTerm === '' || item.text.includes(searchTerm)) {
+                    const clonedItem = item.element.cloneNode(true);
+                    
+                    if (item.value === this.selectedValue) {
+                        clonedItem.classList.add('selected');
+                    }
+                    
+                    if (!item.disabled) {
+                        clonedItem.addEventListener('click', () => {
+                            this.selectItem(item.value, item.originalText, {
+                                remaining: item.remaining,
+                                qty: item.qty,
+                                existing: item.existing
+                            });
+                        });
+                    }
+                    
+                    this.dropdown.appendChild(clonedItem);
+                    visibleCount++;
+                }
+            });
+            
+            if (visibleCount === 0 && searchTerm !== '') {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No results found';
+                this.dropdown.appendChild(noResults);
+            }
+        }
+        
+        selectItem(value, text, data = {}) {
+            this.selectedValue = value;
+            this.selectedText = text;
+            this.selectedData = data;
+            this.input.value = text;
+            this.hiddenInput.value = value;
+            
+            if (value) {
+                this.input.classList.add('has-value');
+            } else {
+                this.input.classList.remove('has-value');
+            }
+            
+            this.hideDropdown();
+            this.onSelect(value, text, data);
+        }
+    }
+
+    const remainingInfo = document.getElementById('remaining-info');
+    const submitBtn = document.getElementById('submit-btn');
+
+    new SearchableSelect('#bjo_searchable', {
+        onSelect: function(value, text, data) {
+            updateBjoInfo(data);
+        }
+    });
+
+    function updateBjoInfo(data) {
+        if (!data.remaining) {
+            remainingInfo.textContent = '';
+            submitBtn.disabled = false;
+            return;
+        }
+
+        const remaining = parseInt(data.remaining || '0');
+        const qty = parseInt(data.qty || '0');
+        const existing = parseInt(data.existing || '0');
+        
+        if (remaining > 0) {
+            remainingInfo.innerHTML = `
+                <span class="text-success">
+                    <i class="fas fa-check-circle me-1"></i>
+                    Sisa slot yang dapat ditambahkan: <strong>${remaining}</strong> 
+                    (${existing}/${qty} sudah terisi)
+                </span>
+            `;
+            submitBtn.disabled = false;
+        } else {
+            remainingInfo.innerHTML = `
+                <span class="text-danger">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    BJO ini sudah penuh, tidak dapat menambah box protector 
+                    (${existing}/${qty})
+                </span>
+            `;
+            submitBtn.disabled = true;
+        }
+    }
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const bjoValue = document.getElementById('bjo_hidden').value;
+        
+        if (!bjoValue) {
+            e.preventDefault();
+            alert('BJO harus dipilih!');
+            return false;
+        }
+        
+        const remaining = parseInt(remainingInfo.textContent.match(/\d+/) || '0');
+        if (remaining <= 0) {
+            e.preventDefault();
+            alert('BJO yang dipilih sudah penuh!');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

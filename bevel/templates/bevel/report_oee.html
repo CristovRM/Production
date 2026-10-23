@@ -1,0 +1,1868 @@
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beveling Production Report - Week {{ week_number }} ({{ start_date|date:"d M Y" }} - {{ end_date|date:"d M Y" }})</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .machine-section {
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .machine-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .summary-section {
+            margin-bottom: 40px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            border: 2px solid #e67e22;
+        }
+
+        .not-posted-cell {
+            background-color: #fff9c4 !important;
+        }
+
+        .shift-row .not-posted-cell {
+            background-color: #fdd835 !important;
+            color: #000 !important;
+        }
+        
+        .oee-row .not-posted-cell {
+            background-color: #ffeb3b !important;
+        }
+        
+        .summary-header {
+            background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            color: white;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            table-layout: auto;
+        }
+        
+        .report-table th,
+        .report-table td {
+            border: 1px solid #ddd;
+            padding: 4px 6px;
+            text-align: left;
+            vertical-align: top;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .report-table th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .row-label-col {
+            width: 120px !important;
+        }
+        
+        .day-col {
+            width: 80px !important;
+        }
+        
+        .separator-col {
+            width: 10px !important;
+        }
+        
+        .summary-col {
+            width: 80px !important;
+        }
+        
+        .target-col {
+            width: 80px !important;
+        }
+        
+        .variance-col {
+            width: 80px !important;
+        }
+        
+        .percent-col {
+            width: 80px !important;
+        }
+        
+        .day-header {
+            background-color: #34495e;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        /* Make summary header cells match shift row color */
+        .summary-section .day-header {
+            background-color: #3498db !important;
+        }
+        
+        .separator-column {
+            background-color: #2c3e50 !important;
+            padding: 0 !important;
+            border-left: 2px solid #1a252f;
+            border-right: 2px solid #1a252f;
+        }
+        
+        .summary-header-cell {
+            background-color: #e67e22 !important;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .row-label {
+            background-color: #ecf0f1;
+            font-weight: bold;
+        }
+        
+        .daily-cell {
+            text-align: center !important;
+            background-color: #ffffff;
+            font-size: 10px;
+        }
+        
+        /* Shift row styling - matching day-header color exactly */
+        .shift-row {
+            background-color: #3498db !important;
+        }
+        
+        .shift-row td {
+            background-color: #3498db !important;
+            color: white !important;
+            text-align: center !important;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .shift-row .row-label {
+            background-color: #3498db !important;
+            color: white !important;
+        }
+        
+        /* Make separator column in shift row same color as shift cells */
+        .shift-row .separator-column {
+            background-color: #34495e !important;
+        }
+        
+        .summary-cell {
+            text-align: right !important;
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .currency-cell {
+            text-align: right;
+            color: #27ae60;
+        }
+        
+        .negative {
+            color: #e74c3c;
+        }
+        
+        .positive {
+            color: #27ae60;
+        }
+        
+        .oee-row {
+            background-color: #fff3cd !important;
+        }
+        
+        .oee-row td {
+            background-color: #2c3e50    !important;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .oee-row .row-label {
+            background-color: #ffc107 !important;
+            color: #000;
+            font-weight: bold;
+        }
+        
+        .oee-row .daily-cell {
+            background-color: #fff8e1 !important;
+        }
+        
+        .oee-row .summary-cell {
+            background-color: #ffe082 !important;
+            font-size: 13px;
+        }
+        
+        .filter-form {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            display: inline-block;
+            margin-right: 15px;
+        }
+        
+        .form-group label {
+            display: inline-block;
+            width: 80px;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .btn {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .week-number {
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            min-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>BEVELING BATAM - 2025 PRODUCTION REPORT</h1>
+        <h2>Week <span class="week-number">{{ week_number }}</span> ({{ start_date|date:"d M Y" }} - {{ end_date|date:"d M Y" }})</h2>
+    </div>
+    
+    <div class="filter-form">
+        <form method="GET">
+            <div class="form-group">
+                <label>Start Date:</label>
+                <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group">
+                <label>End Date:</label>
+                <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <button type="submit" class="btn">Update Report</button>
+        </form>
+    </div>
+    
+    <!-- INDIVIDUAL MACHINE SECTIONS -->
+    {% for machine_info in machine_data %}
+    <div class="machine-section">
+        <div class="machine-header">{{ machine_info.machine_name }}</div>
+        
+        <div class="table-wrapper">
+            <table class="report-table">
+                <colgroup>
+                    <col class="row-label-col">
+                    {% for daily_data in machine_info.daily_data %}
+                        {% for i in ""|ljust:daily_data.columns_count %}
+                            <col class="day-col">
+                        {% endfor %}
+                    {% endfor %}
+                    <col class="separator-col">
+                    <col class="summary-col">
+                    <col class="target-col">
+                    <col class="variance-col">
+                    <col class="percent-col">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th></th>
+                        {% for daily_data in machine_info.daily_data %}
+                            <th class="day-header" colspan="{{ daily_data.columns_count }}">{{ daily_data.date|date:"D d" }}</th>
+                        {% endfor %}
+                        <th class="separator-column"></th>
+                        <th class="summary-header-cell">Weekly</th>
+                        <th class="summary-header-cell">Target</th>
+                        <th class="summary-header-cell">Variance</th>
+                        <th class="summary-header-cell">Percent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Shift Row - MOVED TO TOP WITH HEADER STYLING -->
+                    <tr class="shift-row">
+                        <td class="row-label">Shift</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for shift in daily_data.shifts %}
+                                <td {% if not daily_data.is_posted|get_item:forloop.counter0 %}class="not-posted-cell"{% endif %}>
+                                    {{ shift|default:"-" }}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                    
+                    <!-- Work Order Row -->
+                    <tr>
+                        <td class="row-label">Work Order</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for wo in daily_data.work_orders %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {{ wo|default:"-" }}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Client Row -->
+                    <tr>
+                        <td class="row-label">Client</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for client in daily_data.clients %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {{ client|default:"-" }}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Size Row -->
+                    <tr>
+                        <td class="row-label">Size</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for size in daily_data.sizes %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {{ size|default:"-" }}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Connection Row -->
+                    <tr>
+                        <td class="row-label">Connection</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for conn in daily_data.connections %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {{ conn|default:"-" }}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Batam Cycle Time Row -->
+                    <tr>
+                        <td class="row-label">Batam Cycle Time</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for ct in daily_data.cycle_times %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {{ ct|default:"-" }}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Price Book Row -->
+                    <tr>
+                        <td class="row-label">Price Book</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for pb in daily_data.price_books %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {{ pb|default:"-" }}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+
+                    <!-- Booked Hours Row -->
+                    <tr>
+                        <td class="row-label">Booked Hours</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for i in daily_data.booked_hours_distributed %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if i > 0 %}
+                                        {{ i|floatformat:1 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_booked_hours_header > 0 %}
+                                {{ machine_info.weekly_totals.total_booked_hours_header|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_booked_hours_header|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_booked_hours_header is not None %}
+                                {% if machine_info.weekly_totals.variance_booked_hours_header >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_booked_hours_header|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_booked_hours_header|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_booked_hours_header is not None %}
+                                {% if machine_info.weekly_totals.percent_booked_hours_header >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_booked_hours_header|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_booked_hours_header|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Working Hours Row -->
+                    <tr>
+                        <td class="row-label">Working Hours</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for hours in daily_data.working_hours %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if hours > 0 %}
+                                        {{ hours|floatformat:1 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_working_hours > 0 %}
+                                {{ machine_info.weekly_totals.total_working_hours|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_working_hours|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_working_hours is not None %}
+                                {% if machine_info.weekly_totals.variance_working_hours >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_working_hours|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_working_hours|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_working_hours is not None %}
+                                {% if machine_info.weekly_totals.percent_working_hours >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_working_hours|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_working_hours|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Planned Production Row -->
+                    <tr>
+                        <td class="row-label">Planned Production</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for planned in daily_data.planned_production %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if planned > 0 %}
+                                        {{ planned|floatformat:1 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_planned_production > 0 %}
+                                {{ machine_info.weekly_totals.total_planned_production|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Output QTY Row -->
+                    <tr>
+                    <td class="row-label">Output QTY</td>
+                    {% for daily_data in machine_info.daily_data %}
+                        {% for output in daily_data.output_qty %}
+                            <td class="daily-cell">
+                                {% if output > 0 %}
+                                    {{ output|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_output_qty > 0 %}
+                                {{ machine_info.weekly_totals.total_output_qty|floatformat:2 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_output_qty|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_output_qty != None %}
+                                {% if machine_info.weekly_totals.variance_output_qty >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_output_qty|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_output_qty|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_output_qty != None %}
+                                {% if machine_info.weekly_totals.percent_output_qty >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_output_qty|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_output_qty|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Rejects Row -->
+                    <tr>
+                        <td class="row-label">Rejects</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for rejects in daily_data.rejects %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if rejects > 0 %}
+                                        {{ rejects|floatformat:0 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_rejects > 0 %}
+                                {{ machine_info.weekly_totals.total_rejects|floatformat:0 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Cut backs Row -->
+                    <tr>
+                        <td class="row-label">Cut backs</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for cutbacks in daily_data.cutbacks %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if cutbacks > 0 %}
+                                        {{ cutbacks|floatformat:0 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_cutbacks > 0 %}
+                                {{ machine_info.weekly_totals.total_cutbacks|floatformat:0 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- OEE Row with special highlighting -->
+                    <tr class="oee-row">
+                        <td class="row-label">⚡ OEE</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for oee in daily_data.oee %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if oee > 0 %}
+                                        {{ oee|floatformat:1 }}%
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.average_oee > 0 %}
+                                {{ machine_info.weekly_totals.average_oee|floatformat:1 }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_oee|floatformat:1 }}%</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_oee is not None %}
+                                {% if machine_info.weekly_totals.variance_oee >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_oee|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_oee|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_oee is not None %}
+                                {% if machine_info.weekly_totals.percent_oee >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_oee|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_oee|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Reject rate Row -->
+                    <tr>
+                        <td class="row-label">Reject rate</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for rate in daily_data.reject_rate %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if rate > 0 %}
+                                        {{ rate|floatformat:1 }}%
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.average_reject_rate > 0 %}
+                                {{ machine_info.weekly_totals.average_reject_rate|floatformat:1 }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">≤ {{ machine_info.weekly_totals.target_reject_rate|floatformat:1 }}%</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_reject_rate is not None %}
+                                {% if machine_info.weekly_totals.variance_reject_rate <= 0 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.variance_reject_rate|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">+{{ machine_info.weekly_totals.variance_reject_rate|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Absorption Hours Row -->
+                    <tr>
+                        <td class="row-label">Absorption Hours</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for absorption in daily_data.absorption_hours %}
+                                <td class="daily-cell currency-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if absorption > 0 %}
+                                        ${{ absorption|floatformat:2 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell currency-cell">
+                            {% if machine_info.weekly_totals.total_absorption_hours > 0 %}
+                                ${{ machine_info.weekly_totals.total_absorption_hours|floatformat:2 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell currency-cell">${{ machine_info.weekly_totals.target_absorption_hours|floatformat:2 }}</td>
+                        <td class="summary-cell currency-cell">
+                            {% if machine_info.weekly_totals.variance_absorption_hours != None %}
+                                {% if machine_info.weekly_totals.variance_absorption_hours >= 0 %}
+                                    <span class="positive">+${{ machine_info.weekly_totals.variance_absorption_hours|floatformat:2 }}</span>
+                                {% else %}
+                                    <span class="negative">-${{ machine_info.weekly_totals.variance_absorption_hours|floatformat:2|cut:"-" }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_absorption_hours != None %}
+                                {% if machine_info.weekly_totals.percent_absorption_hours >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_absorption_hours|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_absorption_hours|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Spacing Row -->
+                    <tr><td colspan="100%" style="height: 5px; background-color: #ecf0f1;"></td></tr>
+                    
+                    <!-- Wait Material Row -->
+                    <tr>
+                        <td class="row-label">Wait Material</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for wait_material in daily_data.wait_material %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if wait_material > 0 %}
+                                        {{ wait_material|floatformat:1 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_wait_material > 0 %}
+                                {{ machine_info.weekly_totals.total_wait_material|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_wait_material|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_wait_material != None %}
+                                {% if machine_info.weekly_totals.variance_wait_material >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_wait_material|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_wait_material|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_wait_material != None %}
+                                {% if machine_info.weekly_totals.percent_wait_material >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_wait_material|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_wait_material|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Meetings Row -->
+                    <tr>
+                        <td class="row-label">Meetings</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for meetings in daily_data.meetings %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if meetings > 0 %}
+                                        {{ meetings|floatformat:1 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_meetings > 0 %}
+                                {{ machine_info.weekly_totals.total_meetings|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_meetings|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_meetings != None %}
+                                {% if machine_info.weekly_totals.variance_meetings >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_meetings|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_meetings|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_meetings != None %}
+                                {% if machine_info.weekly_totals.percent_meetings >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_meetings|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_meetings|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Breakdown Row -->
+                    <tr>
+                        <td class="row-label">Breakdown</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for breakdown in daily_data.breakdown %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if breakdown > 0 %}
+                                        {{ breakdown|floatformat:1 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_breakdown > 0 %}
+                                {{ machine_info.weekly_totals.total_breakdown|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_breakdown|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_breakdown != None %}
+                                {% if machine_info.weekly_totals.variance_breakdown >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_breakdown|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_breakdown|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_breakdown != None %}
+                                {% if machine_info.weekly_totals.percent_breakdown >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_breakdown|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_breakdown|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Change over Row -->
+                    <tr>
+                        <td class="row-label">Change over</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for change_over in daily_data.change_over %}
+                                <td class="daily-cell">
+                                    {% if change_over > 0 %}
+                                        {{ change_over|floatformat:1 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_change_over > 0 %}
+                                {{ machine_info.weekly_totals.total_change_over|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_change_over|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_change_over != None %}
+                                {% if machine_info.weekly_totals.variance_change_over >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_change_over|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_change_over|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_change_over != None %}
+                                {% if machine_info.weekly_totals.percent_change_over >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_change_over|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_change_over|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Operating Hours Row -->
+                    <tr>
+                        <td class="row-label">Operating Hours</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for operating in daily_data.operating_hours %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if operating > 0 %}
+                                        {{ operating|floatformat:1 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_operating_hours > 0 %}
+                                {{ machine_info.weekly_totals.total_operating_hours|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_operating_hours|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_operating_hours != None %}
+                                {% if machine_info.weekly_totals.variance_operating_hours >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_operating_hours|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_operating_hours|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_operating_hours != None %}
+                                {% if machine_info.weekly_totals.percent_operating_hours >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_operating_hours|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_operating_hours|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Non recorded Time Row -->
+                    <tr>
+                        <td class="row-label">Non recorded Time</td>
+                        {% for daily_data in machine_info.daily_data %}
+                            {% for non_recorded in daily_data.non_recorded_time %}
+                                <td class="daily-cell {% if not daily_data.is_posted|get_item:forloop.counter0 %}not-posted-cell{% endif %}">
+                                    {% if non_recorded != 0 %}
+                                        {{ non_recorded|floatformat:1 }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.total_non_recorded_time > 0 %}
+                                {{ machine_info.weekly_totals.total_non_recorded_time|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ machine_info.weekly_totals.target_non_recorded_time|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.variance_non_recorded_time != None %}
+                                {% if machine_info.weekly_totals.variance_non_recorded_time >= 0 %}
+                                    <span class="positive">+{{ machine_info.weekly_totals.variance_non_recorded_time|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.variance_non_recorded_time|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if machine_info.weekly_totals.percent_non_recorded_time != None %}
+                                {% if machine_info.weekly_totals.percent_non_recorded_time >= 100 %}
+                                    <span class="positive">{{ machine_info.weekly_totals.percent_non_recorded_time|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ machine_info.weekly_totals.percent_non_recorded_time|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    <div class="no-data">
+        <h3>No Beveling Data Available</h3>
+        <p>No Beveling production data found for the selected date range.</p>
+    </div>
+    {% endfor %}
+    
+    <!-- WEEKLY SUMMARY TABLE FOR ALL MACHINES -->
+    {% if summary_data %}
+    <div class="summary-section">
+        <div class="summary-header">WEEKLY BEVELING SUMMARY - ALL MACHINES</div>
+        
+        <div class="table-wrapper">
+            <table class="report-table">
+                <colgroup>
+                    <col class="row-label-col">
+                    {% for daily_data in summary_data.daily_data %}
+                        <col class="day-col">
+                    {% endfor %}
+                    <col class="separator-col">
+                    <col class="summary-col">
+                    <col class="target-col">
+                    <col class="variance-col">
+                    <col class="percent-col">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th></th>
+                        {% for daily_data in summary_data.daily_data %}
+                            <th class="day-header">{{ daily_data.date|date:"D d" }}</th>
+                        {% endfor %}
+                        <th class="separator-column"></th>
+                        <th class="summary-header-cell">Weekly</th>
+                        <th class="summary-header-cell">Target</th>
+                        <th class="summary-header-cell">Variance</th>
+                        <th class="summary-header-cell">Percent</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <!-- Booked Hours Row -->
+                    <tr>
+                        <td class="row-label">Booked Hours</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.booked_hours_header > 0 %}
+                                    {{ daily_data.booked_hours_header|floatformat:1 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_booked_hours_header > 0 %}
+                                {{ summary_data.weekly_totals.total_booked_hours_header|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_booked_hours_header|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_booked_hours_header != None %}
+                                {% if summary_data.weekly_totals.variance_booked_hours_header >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_booked_hours_header|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_booked_hours_header|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_booked_hours_header != None %}
+                                {% if summary_data.weekly_totals.percent_booked_hours_header >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_booked_hours_header|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_booked_hours_header|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Working Hours Row -->
+                    <tr>
+                        <td class="row-label">Working Hours</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.working_hours > 0 %}
+                                    {{ daily_data.working_hours|floatformat:1 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_working_hours > 0 %}
+                                {{ summary_data.weekly_totals.total_working_hours|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_working_hours|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_working_hours != None %}
+                                {% if summary_data.weekly_totals.variance_working_hours >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_working_hours|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_working_hours|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_working_hours != None %}
+                                {% if summary_data.weekly_totals.percent_working_hours >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_working_hours|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_working_hours|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Planned Production Row -->
+                    <tr>
+                        <td class="row-label">Planned Production</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.planned_production > 0 %}
+                                    {{ daily_data.planned_production|floatformat:1 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_planned_production > 0 %}
+                                {{ summary_data.weekly_totals.total_planned_production|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Output QTY Row -->
+                    <tr>
+                        <td class="row-label">Output QTY</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.output_qty > 0 %}
+                                    {{ daily_data.output_qty|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_output_qty > 0 %}
+                                {{ summary_data.weekly_totals.total_output_qty|floatformat:2 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_output_qty|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_output_qty != None %}
+                                {% if summary_data.weekly_totals.variance_output_qty >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_output_qty|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_output_qty|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_output_qty != None %}
+                                {% if summary_data.weekly_totals.percent_output_qty >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_output_qty|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_output_qty|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Cut backs Row -->
+                    <tr>
+                        <td class="row-label">Cut backs</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.cutbacks > 0 %}
+                                    {{ daily_data.cutbacks|floatformat:0 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_cutbacks > 0 %}
+                                {{ summary_data.weekly_totals.total_cutbacks|floatformat:0 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- OEE Row with special highlighting -->
+                    <tr class="oee-row">
+                        <td class="row-label">⚡ OEE</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.oee > 0 %}
+                                    {{ daily_data.oee|floatformat:1 }}%
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.average_oee > 0 %}
+                                {{ summary_data.weekly_totals.average_oee|floatformat:1 }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_oee|floatformat:1 }}%</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_oee != None %}
+                                {% if summary_data.weekly_totals.variance_oee >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_oee|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_oee|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_oee != None %}
+                                {% if summary_data.weekly_totals.percent_oee >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_oee|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_oee|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Reject rate Row -->
+                    <tr>
+                        <td class="row-label">Reject rate</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.reject_rate > 0 %}
+                                    {{ daily_data.reject_rate|floatformat:1 }}%
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.average_reject_rate > 0 %}
+                                {{ summary_data.weekly_totals.average_reject_rate|floatformat:1 }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">≤ {{ summary_data.weekly_totals.target_reject_rate|floatformat:1 }}%</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_reject_rate != None %}
+                                {% if summary_data.weekly_totals.variance_reject_rate <= 0 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.variance_reject_rate|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">+{{ summary_data.weekly_totals.variance_reject_rate|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">-</td>
+                    </tr>
+                    
+                    <!-- Absorption Hours Row -->
+                    <tr>
+                        <td class="row-label">Absorption Hours</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell currency-cell">
+                                {% if daily_data.absorption_hours > 0 %}
+                                    ${{ daily_data.absorption_hours|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell currency-cell">
+                            {% if summary_data.weekly_totals.total_absorption_hours > 0 %}
+                                ${{ summary_data.weekly_totals.total_absorption_hours|floatformat:2 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell currency-cell">${{ summary_data.weekly_totals.target_absorption_hours|floatformat:2 }}</td>
+                        <td class="summary-cell currency-cell">
+                            {% if summary_data.weekly_totals.variance_absorption_hours != None %}
+                                {% if summary_data.weekly_totals.variance_absorption_hours >= 0 %}
+                                    <span class="positive">+${{ summary_data.weekly_totals.variance_absorption_hours|floatformat:2 }}</span>
+                                {% else %}
+                                    <span class="negative">-${{ summary_data.weekly_totals.variance_absorption_hours|floatformat:2|cut:"-" }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_absorption_hours != None %}
+                                {% if summary_data.weekly_totals.percent_absorption_hours >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_absorption_hours|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_absorption_hours|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Spacing Row -->
+                    <tr><td colspan="12" style="height: 5px; background-color: #ecf0f1;"></td></tr>
+                    
+                    <!-- Wait Material Row -->
+                    <tr>
+                        <td class="row-label">Wait Material</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.wait_material > 0 %}
+                                    {{ daily_data.wait_material|floatformat:1 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_wait_material > 0 %}
+                                {{ summary_data.weekly_totals.total_wait_material|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_wait_material|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_wait_material != None %}
+                                {% if summary_data.weekly_totals.variance_wait_material >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_wait_material|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_wait_material|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_wait_material != None %}
+                                {% if summary_data.weekly_totals.percent_wait_material >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_wait_material|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_wait_material|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Meetings Row -->
+                    <tr>
+                        <td class="row-label">Meetings</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.meetings > 0 %}
+                                    {{ daily_data.meetings|floatformat:1 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_meetings > 0 %}
+                                {{ summary_data.weekly_totals.total_meetings|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_meetings|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_meetings != None %}
+                                {% if summary_data.weekly_totals.variance_meetings >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_meetings|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_meetings|floatformat:1 }}</span>
+                                    {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_meetings != None %}
+                                {% if summary_data.weekly_totals.percent_meetings >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_meetings|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_meetings|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Breakdown Row -->
+                    <tr>
+                        <td class="row-label">Breakdown</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.breakdown > 0 %}
+                                    {{ daily_data.breakdown|floatformat:1 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_breakdown > 0 %}
+                                {{ summary_data.weekly_totals.total_breakdown|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_breakdown|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_breakdown != None %}
+                                {% if summary_data.weekly_totals.variance_breakdown >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_breakdown|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_breakdown|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_breakdown != None %}
+                                {% if summary_data.weekly_totals.percent_breakdown >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_breakdown|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_breakdown|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Change over Row -->
+                    <tr>
+                        <td class="row-label">Change over</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.change_over > 0 %}
+                                    {{ daily_data.change_over|floatformat:1 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_change_over > 0 %}
+                                {{ summary_data.weekly_totals.total_change_over|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_change_over|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_change_over != None %}
+                                {% if summary_data.weekly_totals.variance_change_over >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_change_over|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_change_over|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_change_over != None %}
+                                {% if summary_data.weekly_totals.percent_change_over >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_change_over|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_change_over|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Operating Hours Row -->
+                    <tr>
+                        <td class="row-label">Operating Hours</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.operating_hours > 0 %}
+                                    {{ daily_data.operating_hours|floatformat:1 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_operating_hours > 0 %}
+                                {{ summary_data.weekly_totals.total_operating_hours|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_operating_hours|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_operating_hours != None %}
+                                {% if summary_data.weekly_totals.variance_operating_hours >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_operating_hours|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_operating_hours|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_operating_hours != None %}
+                                {% if summary_data.weekly_totals.percent_operating_hours >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_operating_hours|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_operating_hours|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    
+                    <!-- Non recorded Time Row -->
+                    <tr>
+                        <td class="row-label">Non recorded Time</td>
+                        {% for daily_data in summary_data.daily_data %}
+                            <td class="daily-cell">
+                                {% if daily_data.non_recorded_time != 0 %}
+                                    {{ daily_data.non_recorded_time|floatformat:1 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="separator-column"></td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.total_non_recorded_time > 0 %}
+                                {{ summary_data.weekly_totals.total_non_recorded_time|floatformat:1 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">{{ summary_data.weekly_totals.target_non_recorded_time|floatformat:1 }}</td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.variance_non_recorded_time != None %}
+                                {% if summary_data.weekly_totals.variance_non_recorded_time >= 0 %}
+                                    <span class="positive">+{{ summary_data.weekly_totals.variance_non_recorded_time|floatformat:1 }}</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.variance_non_recorded_time|floatformat:1 }}</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="summary-cell">
+                            {% if summary_data.weekly_totals.percent_non_recorded_time != None %}
+                                {% if summary_data.weekly_totals.percent_non_recorded_time >= 100 %}
+                                    <span class="positive">{{ summary_data.weekly_totals.percent_non_recorded_time|floatformat:1 }}%</span>
+                                {% else %}
+                                    <span class="negative">{{ summary_data.weekly_totals.percent_non_recorded_time|floatformat:1 }}%</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <script>
+        function printReport() {
+            window.print();
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const header = document.querySelector('.header');
+            const printBtn = document.createElement('button');
+            printBtn.innerHTML = '🖨️ Print Report';
+            printBtn.className = 'btn';
+            printBtn.style.marginTop = '10px';
+            printBtn.onclick = printReport;
+            header.appendChild(printBtn);
+        });
+    </script>
+    
+    <style media="print">
+    .filter-form { display: none; }
+    .btn { display: none; }
+    
+    body { 
+        margin: 0; 
+        font-size: 9px;
+        background: white;
+        color: black;
+    }
+    
+    .machine-section, .summary-section { 
+        page-break-inside: avoid;
+        margin-bottom: 15px;
+        box-shadow: none;
+    }
+    
+    .report-table { 
+        font-size: 8px;
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: auto;
+    }
+    
+    .row-label-col { min-width: 90px; }
+    .day-col { min-width: 60px; }
+    .separator-col { width: 8px !important; max-width: 8px; }
+    .summary-col { min-width: 55px; }
+    .target-col { min-width: 55px; }
+    .variance-col { min-width: 60px; }
+    .percent-col { min-width: 55px; }
+    
+    .report-table th,
+    .report-table td {
+        padding: 2px 3px;
+        font-size: 7px;
+        border: 0.5px solid #ddd;
+        white-space: nowrap;
+        overflow: visible;
+        word-wrap: break-word;
+    }
+    
+    .daily-cell {
+        text-align: center !important;
+        font-size: 6px;
+    }
+    
+    .summary-cell {
+        text-align: right !important;
+        font-size: 7px;
+        font-weight: bold;
+    }
+    
+    .separator-column { 
+        background-color: #333 !important; 
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        width: 8px !important;
+        min-width: 8px !important;
+        max-width: 8px !important;
+        padding: 0 !important;
+    }
+    
+    .shift-row td {
+        background-color: #34495e !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        font-weight: bold;
+    }
+    
+    .shift-row .row-label {
+        background-color: #2c3e50 !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .oee-row td {
+        background-color: #fff3cd !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        font-weight: bold;
+    }
+    
+    .oee-row .row-label {
+        background-color: #ffc107 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .summary-section .summary-header {
+        background: #e67e22 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .machine-header {
+        background-color: #2c3e50 !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .day-header, .summary-header-cell {
+        background-color: #3498db !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .positive { color: #27ae60 !important; }
+    .negative { color: #e74c3c !important; }
+    .currency-cell { color: #27ae60 !important; }
+    
+    .table-wrapper {
+        overflow: visible;
+    }
+    
+    .header h1 { font-size: 14px; margin: 5px 0; }
+    .header h2 { font-size: 12px; margin: 3px 0; }
+</style>
+</body>
+</html>

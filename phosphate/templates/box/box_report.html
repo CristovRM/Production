@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+ {% load static %}
+<div class="container-fluid">
+     <h4 class="mb-3">BOX Protector Report</h4>
+    <div class="card w-100">
+        <div class="card-header">
+           
+            <form method="get" class="row g-2">
+                <div class="col-md-3">
+                    <select name="month" class="form-select">
+                        <option value="">-- Select Month --</option>
+                        {% for m in months %}
+                        <option value="{{ m.num }}" {% if m.num == selected_month %}selected{% endif %}>
+                            {{ m.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="year" class="form-select">
+                        <option value="">-- Select Year --</option>
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>
+                            {{ y }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary" type="submit">Filter</button>
+                    <a href="{% url 'box_report' %}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="box_report" class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>NO</th>
+                            <th>DATE</th>
+                            <th>BP NO.</th>
+                            <th>OPERATOR</th>
+                            <th>SHIFT</th>
+                            <th>INSTALLED TO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report_data %}
+                        <tr>
+                            <td>{{ row.no }}</td>
+                            <td>{{ row.date|date:"m/d/Y" }}</td>
+                            <td>{{ row.bp_no }}</td>
+                            <td>{{ row.operator }}</td>
+                            <td>{{ row.shift }}</td>
+                            <td>{{ row.installed_to }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No data available</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'assets/js/jquery-3.7.1.js' %}"></script>
+<script src="{% static 'assets/js/dataTables.js' %}"></script>
+<script src="{% static 'assets/js/dataTables.bootstrap5.js' %}"></script>
+<script src="{% static 'assets/js/dataTables.buttons.js' %}"></script>
+<script src="{% static 'assets/js/buttons.bootstrap5.js' %}"></script>
+<script src="{% static 'assets/js/jszip.min.js' %}"></script>
+<script src="{% static 'assets/js/pdfmake.js' %}"></script>
+<script src="{% static 'assets/js/vfs_fonts.js' %}"></script>
+<script src="{% static 'assets/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'assets/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'assets/js/buttons.colVis.min.js' %}"></script>
+
+<script>
+    new DataTable('#box_report', {
+        responsive: true,
+        autoWidth: false
+    });
+</script>
+{% endblock %}

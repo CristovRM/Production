@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Edit Maintenance</h2>
+
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Tipe Proses</label>
+                <input type="text" class="form-control" value="{{ item.process_type }}" readonly>
+                <small class="text-muted">Tipe proses tidak dapat diubah</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Mesin</label>
+                <input type="text" class="form-control" value="{{ item.related_header.machine.name }}" readonly>
+                <small class="text-muted">Mesin tidak dapat diubah karena terkait dengan header</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Tanggal</label>
+                <input type="text" class="form-control" value="{{ item.related_header.date }}" readonly>
+                <small class="text-muted">Tanggal record terkait</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Operator</label>
+                <input type="text" class="form-control" value="{{ item.operator_name|default:'-' }}" readonly>
+                <small class="text-muted">Operator yang bertugas</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Shift</label>
+                <input type="text" class="form-control" value="{{ item.related_header.shift.name|default:'-' }}" readonly>
+                <small class="text-muted">Shift kerja terkait</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Durasi (jam) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" name="duration" class="form-control" value="{{ item.duration }}" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Biaya <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="number" step="0.01" name="cost" class="form-control" value="{{ item.cost }}" required>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Deskripsi Masalah</label>
+                <textarea name="issue" class="form-control" rows="4" placeholder="Deskripsikan masalah maintenance yang terjadi...">{{ item.issue }}</textarea>
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save me-1"></i>Simpan Perubahan
+            </button>
+            <a href="{% url 'maintenance_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Kembali
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-label {
+    font-weight: 500;
+}
+
+.text-danger {
+    font-size: 0.875em;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.card {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+}
+
+.btn i {
+    font-size: 0.875em;
+}
+
+@media (max-width: 768px) {
+    .text-end {
+        text-align: center !important;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <!-- Django Messages Display -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-hide-alert" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Buat Welding NCR Manual</h2>
+        <a href="{% url 'weld_ncr_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Kembali ke List
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" id="ncrForm">
+                {% csrf_token %}
+                
+                <!-- Weld Detail Selection -->
+                <div class="mb-3">
+                    <label for="serial" class="form-label">Weld Detail <span class="text-danger">*</span></label>
+                    <select name="serial" id="serial" class="form-select" required>
+                        <option value="">-- Pilih Weld Detail --</option>
+                        {% for detail in available_details %}
+                            <option value="{{ detail.id }}" 
+                                    data-header="{% if detail.Reff %}{{ detail.Reff.machine.name }} - {{ detail.Reff.date|date:'d/m/Y' }}{% else %}-{% endif %}"
+                                    data-bjo="{% if detail.bjo %}{{ detail.bjo.bjo }} - {{ detail.bjo.customer }}{% else %}-{% endif %}"
+                                    data-joint="{{ detail.joint_number }}"
+                                    data-conn="{{ detail.conn_number }}"
+                                    data-type="{{ detail.pin_or_box }}"
+                                    data-time="{{ detail.start_time|time:'H:i' }} - {{ detail.stop_time|time:'H:i' }}">
+                                Joint: {{ detail.joint_number }} | Conn: {{ detail.conn_number|default:"-" }} | {{ detail.pin_or_box }} | 
+                                {% if detail.Reff %}{{ detail.Reff.machine.name }} ({{ detail.Reff.date|date:'d/m/Y' }}){% endif %} | 
+                                {% if detail.bjo %}BJO: {{ detail.bjo.bjo }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Pilih weld detail yang akan dibuat NCR-nya</small>
+                </div>
+
+                <!-- Detail Information Card (akan muncul setelah memilih weld detail) -->
+                <div id="detailInfo" class="card bg-light mb-3" style="display: none;">
+                    <div class="card-body">
+                        <h6 class="card-title">Informasi Weld Detail:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Weld Header:</strong> <span id="infoHeader">-</span></p>
+                                <p class="mb-2"><strong>Job Header (BJO):</strong> <span id="infoBjo">-</span></p>
+                                <p class="mb-2"><strong>Joint Number:</strong> <span id="infoJoint">-</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-2"><strong>Conn Number:</strong> <span id="infoConn">-</span></p>
+                                <p class="mb-2"><strong>Type:</strong> <span id="infoType">-</span></p>
+                                <p class="mb-2"><strong>Time:</strong> <span id="infoTime">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reason -->
+                <div class="mb-3">
+                    <label for="reason" class="form-label">Reason (Alasan NCR)</label>
+                    <textarea name="reason" id="reason" class="form-control" rows="3" 
+                              placeholder="Masukkan alasan NCR (opsional)"></textarea>
+                    <small class="form-text text-muted">Jelaskan alasan atau masalah yang ditemukan</small>
+                </div>
+
+                <!-- Disposition -->
+                <div class="mb-3">
+                    <label for="disposition" class="form-label">Disposition (Disposisi)</label>
+                    <textarea name="disposition" id="disposition" class="form-control" rows="3" 
+                              placeholder="Masukkan disposisi (opsional)"></textarea>
+                    <small class="form-text text-muted">Keputusan atau disposisi yang diambil</small>
+                </div>
+
+                <!-- Action -->
+                <div class="mb-3">
+                    <label for="action" class="form-label">Action (Tindakan)</label>
+                    <textarea name="action" id="action" class="form-control" rows="3" 
+                              placeholder="Masukkan tindakan yang diambil (opsional)"></textarea>
+                    <small class="form-text text-muted">Tindakan korektif atau preventif yang dilakukan</small>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'weld_ncr_list' %}" class="btn btn-secondary">Batal</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Simpan NCR
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if not available_details %}
+    <div class="alert alert-info mt-3">
+        <i class="fas fa-info-circle me-2"></i>
+        Tidak ada weld detail yang tersedia untuk dibuat NCR. 
+        Semua weld detail yang ada sudah memiliki NCR atau masih berstatus uncompleted.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide alerts
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 2500);
+    });
+
+    // Show detail info when weld detail is selected
+    const serialSelect = document.getElementById('serial');
+    const detailInfo = document.getElementById('detailInfo');
+    
+    serialSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (this.value) {
+            document.getElementById('infoHeader').textContent = selectedOption.dataset.header || '-';
+            document.getElementById('infoBjo').textContent = selectedOption.dataset.bjo || '-';
+            document.getElementById('infoJoint').textContent = selectedOption.dataset.joint || '-';
+            document.getElementById('infoConn').textContent = selectedOption.dataset.conn || '-';
+            document.getElementById('infoType').textContent = selectedOption.dataset.type || '-';
+            document.getElementById('infoTime').textContent = selectedOption.dataset.time || '-';
+            detailInfo.style.display = 'block';
+        } else {
+            detailInfo.style.display = 'none';
+        }
+    });
+
+    // Form validation
+    const ncrForm = document.getElementById('ncrForm');
+    ncrForm.addEventListener('submit', function(e) {
+        const serialValue = document.getElementById('serial').value;
+        
+        if (!serialValue) {
+            e.preventDefault();
+            alert('Weld Detail wajib dipilih!');
+            return false;
+        }
+    });
+});
+</script>
+
+<style>
+/* Custom alert styles */
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-error, .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info {
+    background-color: #cce8f4;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.alert.fade {
+    transition: opacity 0.5s ease-out;
+}
+
+#detailInfo {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+</style>
+{% endblock %}

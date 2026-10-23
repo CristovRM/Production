@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Edit OD Thickness</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="od" class="form-label">OD</label>
+            <input type="number" step="0.001" name="od" id="od" class="form-control"
+                   value="{{ item.od }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="wall" class="form-label">Wall</label>
+            <input type="number" step="0.001" name="wall" id="wall" class="form-control"
+                   value="{{ item.wall }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="size" class="form-label">Size</label>
+            <input type="text" name="size" id="size" class="form-control"
+                   value="{{ item.size }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="process_type" class="form-label">Process Type</label>
+            <select name="process_type" id="process_type" class="form-control">
+                <option value="">-- Pilih Process Type --</option>
+                {% for p in processes %}
+                    <option value="{{ p.id }}" {% if item.process_type and item.process_type.id == p.id %}selected{% endif %}>
+                        {{ p.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success">Simpan</button>
+            <a href="{% url 'odthickness_list' %}" class="btn btn-secondary">Batal</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Tambah Produksi</h2>
+
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <!-- Tanggal -->
+            <div class="col-12 col-md-4">
+                <label for="date" class="form-label">Tanggal</label>
+                <input type="date" name="date" class="form-control" required>
+            </div>
+
+            <!-- Mesin -->
+            <div class="col-12 col-md-4">
+                <label for="machine" class="form-label">Mesin</label>
+                <select name="machine" class="form-select" required>
+                    <option value="">-- Pilih Mesin --</option>
+                    {% for item in machines %}
+                        <option value="{{ item.id }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Shift -->
+            <div class="col-12 col-md-4">
+                <label for="shift" class="form-label">Shift</label>
+                <select name="shift" class="form-select" required>
+                    <option value="">-- Pilih Shift --</option>
+                    {% for item in shifts %}
+                        <option value="{{ item.id }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Operator -->
+            <div class="col-12 col-md-6">
+                <label for="operator" class="form-label">Operator</label>
+                <select name="operator" class="form-select" required>
+                    <option value="">-- Pilih Operator --</option>
+                    {% for item in operators %}
+                        <option value="{{ item.id }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Booked Hours -->
+            <div class="col-12 col-md-6">
+                <label for="booked_hours" class="form-label">Booked Hours</label>
+                <select name="booked_hours" class="form-select" required>
+                    <option value="">-- Pilih --</option>
+                    {% for item in booked_hours %}
+                        <option value="{{ item.id }}">{{ item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Komentar -->
+            <div class="col-12">
+                <label for="comment" class="form-label">Komentar</label>
+                <textarea name="comment" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-success text-uppercase">Simpan</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

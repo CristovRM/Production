@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Laporan Joint Number</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            margin: 40px;
+            color: #333;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 15px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-top img {
+            height: 50px;
+            object-fit: contain;
+            margin-right: 10px;
+        }
+
+        .company-info h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c5282;
+            margin: 0;
+        }
+
+        .header-date {
+            font-size: 10pt;
+            text-align: right;
+            background-color: #f7fafc;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .header-date p {
+            margin: 0;
+        }
+
+        .main-title {
+            text-align: center;
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c5282;
+            margin-top: 25px;
+            margin-bottom: 3px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 10pt;
+            font-style: italic;
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 7px 5px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-size: 9pt;
+            text-align: right;
+            color: #777;
+            border-top: 1px dashed #aaa;
+            padding-top: 8px;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header-top">
+        <div class="logo-section">
+            <img src="{{ logo_url }}" alt="Logo NOV" onerror="this.style.display='none';">
+            <div class="company-info">
+                <h1>PT H-Tech Oil Field Equipment NOV</h1>
+            </div>
+        </div>
+        <div class="header-date">
+            <p><strong>Tanggal Cetak:</strong><br>{{ today|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+
+    <!-- Judul -->
+    <div class="main-title">LAPORAN JOINT NUMBER</div>
+    <div class="subtitle">Daftar Joint Number yang telah terdaftar dalam sistem</div>
+
+    <!-- Tabel -->
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 30px;">No</th>
+                <th style="width: 90px;">Joint Number</th>
+                <th style="width: 280px;">BJO & Customer</th>
+                <th style="width: 90px;">Box Threaded</th>
+                <th style="width: 90px;">Pin Threaded</th>
+                <th style="width: 110px;">Box Phosphated</th>
+                <th style="width: 110px;">Pin Phosphated</th>
+                <th style="width: 60px;">Used</th>
+                <th style="width: 50px;">NCR</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sn in joint_numbers %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ sn.joint_number }}</td>
+                <td class="text-left">
+                    {% if sn.bjo %}
+                        bjo: {{ sn.bjo.bjo }} | customer: {{ sn.bjo.customer }} | {{ sn.bjo.process_type.name }} {{ sn.bjo.size.od }} x {{ sn.bjo.size.thickness }} | {{ sn.bjo.bp }} | qty: {{ sn.bjo.qty|floatformat:2 }} joints
+                    {% else %}
+                        <span style="color: #888;">-</span>
+                    {% endif %}
+                </td>
+                <td>{{ sn.is_box_threaded|yesno:"✔,✘" }}</td>
+                <td>{{ sn.is_pin_threaded|yesno:"✔,✘" }}</td>
+                <td>{{ sn.is_box_phosphated|yesno:"✔,✘" }}</td>
+                <td>{{ sn.is_pin_phosphated|yesno:"✔,✘" }}</td>
+                <td>{{ sn.is_used|yesno:"✔,✘" }}</td>
+                <td>{{ sn.is_ncr|yesno:"✔,✘" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9">Tidak ada data tersedia.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Dokumen ini dihasilkan secara otomatis oleh sistem.</p>
+    </div>
+
+</body>
+</html>

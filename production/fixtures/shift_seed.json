@@ -1,0 +1,22 @@
+[
+  {
+    "model": "production.shift",
+    "pk": 1,
+    "fields": {
+      "name": "SHIFT 1",
+      "remarks": "Pagi (08:00 - 17:00)",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.shift",
+    "pk": 2,
+    "fields": {
+      "name": "SHIFT 2",
+      "remarks": "Sore (20:00 - 05:00)",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

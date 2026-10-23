@@ -1,0 +1,470 @@
+[
+  {
+    "model": "production.operator",
+    "pk": 1,
+    "fields": {
+      "employee_id": "156842",
+      "initial": "DE",
+      "name": "DEDY",
+      "work_station": "SR1",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 2,
+    "fields": {
+      "employee_id": "156847",
+      "initial": "MF",
+      "name": "MAHVUDZ BASORI THREADING",
+      "work_station": "-",
+      "remarks": "LEADMAN",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 3,
+    "fields": {
+      "employee_id": "156914",
+      "initial": "MHD",
+      "name": "MAHENDRA",
+      "work_station": "NB48",
+      "remarks": "OPERATOR THREADING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 4,
+    "fields": {
+      "employee_id": "156934",
+      "initial": "AP",
+      "name": "AGUS PURWANTO",
+      "work_station": "-",
+      "remarks": "LEADMAN WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 5,
+    "fields": {
+      "employee_id": "156959",
+      "initial": "YS",
+      "name": "YUSMAN SAMOSIR",
+      "work_station": "NB48",
+      "remarks": "OPERATOR PHOSPHATING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 6,
+    "fields": {
+      "employee_id": "156979",
+      "initial": "SMS",
+      "name": "SURUNG MAWASA SITOHANG",
+      "work_station": "NB48",
+      "remarks": "OPERATOR PHOSPHATING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 7,
+    "fields": {
+      "employee_id": "156982",
+      "initial": "SNDR",
+      "name": "SUNANDAR",
+      "work_station": "NB48",
+      "remarks": "OPERATOR THREADING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 8,
+    "fields": {
+      "employee_id": "157038",
+      "initial": "EFD",
+      "name": "EFENDI",
+      "work_station": "NB48",
+      "remarks": "OPERATOR THREADING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 9,
+    "fields": {
+      "employee_id": "157039",
+      "initial": "SHY",
+      "name": "SUHARIYONO",
+      "work_station": "INS 1",
+      "remarks": "OPERATOR THREADING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 10,
+    "fields": {
+      "employee_id": "152032",
+      "initial": "AH",
+      "name": "ADE HOLIYANTO",
+      "work_station": "INS 1",
+      "remarks": "OPERATOR THREADING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 11,
+    "fields": {
+      "employee_id": "292107",
+      "initial": "AN",
+      "name": "AGUSTINUS NAINGGOLAN",
+      "work_station": "-",
+      "remarks": "LEADMAN THREADING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 12,
+    "fields": {
+      "employee_id": "292109",
+      "initial": "AR",
+      "name": "ARMAN",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 13,
+    "fields": {
+      "employee_id": "296363",
+      "initial": "KDM",
+      "name": "KADIM",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 14,
+    "fields": {
+      "employee_id": "296364",
+      "initial": "HLK",
+      "name": "MUHAMMAD HALIK",
+      "work_station": "-",
+      "remarks": "LEADMAN WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 15,
+    "fields": {
+      "employee_id": "296401",
+      "initial": "SW",
+      "name": "SUGENG WARSONO",
+      "work_station": "-",
+      "remarks": "OPERATOR THREADING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 16,
+    "fields": {
+      "employee_id": "315707",
+      "initial": "MS",
+      "name": "MARTIN SIMATUPANG",
+      "work_station": "NB48",
+      "remarks": "OPERATOR PHOSPHATING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 17,
+    "fields": {
+      "employee_id": "315709",
+      "initial": "CHAS",
+      "name": "CHASTRO PAKPAHAN",
+      "work_station": "INS 2",
+      "remarks": "OPERATOR THREADING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 18,
+    "fields": {
+      "employee_id": "315711",
+      "initial": "AH",
+      "name": "AHAD",
+      "work_station": "SR3",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 19,
+    "fields": {
+      "employee_id": "321674",
+      "initial": "ASW",
+      "name": "ASWAN FAHRI DONGORAN",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 20,
+    "fields": {
+      "employee_id": "321675",
+      "initial": "DAR",
+      "name": "DARLIS",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 21,
+    "fields": {
+      "employee_id": "4002726",
+      "initial": "PIT",
+      "name": "PITTOR HUTABARAT",
+      "work_station": "INS 2",
+      "remarks": "OPERATOR THREADING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 22,
+    "fields": {
+      "employee_id": "4002730",
+      "initial": "JA",
+      "name": "JAINAL ARIFIN",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 23,
+    "fields": {
+      "employee_id": "4002746",
+      "initial": "SUP",
+      "name": "SUPRIADI",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 24,
+    "fields": {
+      "employee_id": "4002749",
+      "initial": "SAR",
+      "name": "SARMIN",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 25,
+    "fields": {
+      "employee_id": "4018006",
+      "initial": "ISM",
+      "name": "ISMUHA",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 26,
+    "fields": {
+      "employee_id": "4018020",
+      "initial": "SUP",
+      "name": "SUPIAN",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 27,
+    "fields": {
+      "employee_id": "4019776",
+      "initial": "KUN",
+      "name": "KUNCORO ADHI WIBOWO",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 28,
+    "fields": {
+      "employee_id": "4044252",
+      "initial": "AM",
+      "name": "AHMAD MULIADI NASUTION",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 29,
+    "fields": {
+      "employee_id": "4045109",
+      "initial": "IM",
+      "name": "IKHSAN MAULANA",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+   {
+    "model": "production.operator",
+    "pk": 30,
+    "fields": {
+      "employee_id": "4045111",
+      "initial": "SI",
+      "name": "SUGENG ISMAYUDI",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 31,
+    "fields": {
+      "employee_id": "4050172",
+      "initial": "APY",
+      "name": "APRIYADI",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 32,
+    "fields": {
+      "employee_id": "4050175",
+      "initial": "CT",
+      "name": "CITRO SIMANJUNTAK",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 33,
+    "fields": {
+      "employee_id": "4063014",
+      "initial": "ASE",
+      "name": "ASER PANJAITAN",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 34,
+    "fields": {
+      "employee_id": "4063015",
+      "initial": "FU",
+      "name": "FERRY UALGIUS",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.operator",
+    "pk": 35,
+    "fields": {
+      "employee_id": "4063016",
+      "initial": "HS",
+      "name": "HENDRA SETIAWAN",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+   {
+    "model": "production.operator",
+    "pk": 36,
+    "fields": {
+      "employee_id": "4063017",
+      "initial": "YS",
+      "name": "YUDA SYAHPUTRA",
+      "work_station": "-",
+      "remarks": "OPERATOR WELDING",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

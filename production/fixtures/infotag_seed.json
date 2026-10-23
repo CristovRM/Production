@@ -1,0 +1,47 @@
+[
+  {
+    "model": "production.infotag",
+    "pk": 1,
+    "fields": {
+      "name": "BP + PP",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.infotag",
+    "pk": 2,
+    "fields": {
+      "name": "FORGING BP",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.infotag",
+    "pk": 3,
+    "fields": {
+      "name": "B X P",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.infotag",
+    "pk": 4,
+    "fields": {
+      "name": "BWP X P",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.infotag",
+    "pk": 5,
+    "fields": {
+      "name": "BVL X P",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

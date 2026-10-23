@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Add new process{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Tambah Process</h2>
+
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nama Process</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Rate</label>
+                <input type="number" name="rate" class="form-control" step="0.01" min="0" required>
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-primary">Simpan</button>
+            <a href="{% url 'process_list' %}" class="btn btn-secondary">Kembali</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

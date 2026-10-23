@@ -1,0 +1,230 @@
+[
+  {
+    "model": "production.odthickness",
+    "pk": 1,
+    "fields": {
+      "od": "20.000",
+      "wall": "0.500",
+      "size": "20 x .500",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 2,
+    "fields": {
+      "od": "20.000",
+      "wall": "0.625",
+      "size": "20 x .625",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 3,
+    "fields": {
+      "od": "20.000",
+      "wall": "0.750",
+      "size": "20 x .750",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 4,
+    "fields": {
+      "od": "20.000",
+      "wall": "0.812",
+      "size": "20 x .812",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 5,
+    "fields": {
+      "od": "20.000",
+      "wall": "1.000",
+      "size": "20 x 1.000",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 6,
+    "fields": {
+      "od": "20.000",
+      "wall": "1.250",
+      "size": "20 x 1.250",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 7,
+    "fields": {
+      "od": "22.000",
+      "wall": "0.500",
+      "size": "22 x .500",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 8,
+    "fields": {
+      "od": "22.000",
+      "wall": "0.625",
+      "size": "22 x .625",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 9,
+    "fields": {
+      "od": "22.000",
+      "wall": "0.750",
+      "size": "20 x .750",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 10,
+    "fields": {
+      "od": "22.000",
+      "wall": "1.000",
+      "size": "22 x 1.000",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 11,
+    "fields": {
+      "od": "22.000",
+      "wall": "1.250",
+      "size": "22 x 1.250",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 12,
+    "fields": {
+      "od": "24.000",
+      "wall": "0.500",
+      "size": "24 x .500",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 13,
+    "fields": {
+      "od": "24.000",
+      "wall": "0.625",
+      "size": "24 x .625",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 14,
+    "fields": {
+      "od": "24.000",
+      "wall": "0.635",
+      "size": "24 x .635",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 15,
+    "fields": {
+      "od": "24.000",
+      "wall": "0.750",
+      "size": "24 x .750",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 16,
+    "fields": {
+      "od": "24.000",
+      "wall": "0.812",
+      "size": "24 x .812",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 17,
+    "fields": {
+      "od": "24.000",
+      "wall": "1.000",
+      "size": "24 x 1.000",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 18,
+    "fields": {
+      "od": "24.000",
+      "wall": "1.250",
+      "size": "24 x 1.250",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.odthickness",
+    "pk": 19,
+    "fields": {
+      "od": "24.000",
+      "wall": "1.500",
+      "size": "24 x 1.500",
+      "process_type": 1,
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

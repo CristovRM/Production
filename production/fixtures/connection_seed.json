@@ -1,0 +1,62 @@
+[
+  {
+    "model": "production.connection",
+    "pk": 1,
+    "fields": {
+      "name": "VIPER",
+      "remarks": "Connection type Viper",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.connection",
+    "pk": 2,
+    "fields": {
+      "name": "XLF",
+      "remarks": "Connection type XLC",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.connection",
+    "pk": 3,
+    "fields": {
+      "name": "XLW",
+      "remarks": "Connection type XLW",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.connection",
+    "pk": 4,
+    "fields": {
+      "name": "XL/CS",
+      "remarks": "Connection type XLCS",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.connection",
+    "pk": 5,
+    "fields": {
+      "name": "XLW/GT",
+      "remarks": "Connection type XLWGT",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.connection",
+    "pk": 6,
+    "fields": {
+      "name": "SCORPION",
+      "remarks": "Connection type Scorpion",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

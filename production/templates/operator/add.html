@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Add new operator{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Tambah Operator</h2>
+
+    <form method="post" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Employee ID</label>
+                <input type="text" name="employee_id" class="form-control" value="{{ employee_id }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Initial</label>
+                <input type="text" name="initial" class="form-control" value="{{ initial }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Nama <span class="text-danger">*</span></label>
+                <input type="text" name="name" class="form-control" value="{{ name }}" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Position</label>
+                <select name="position" class="form-control">
+                    <option value="">-- Pilih Position --</option>
+                    {% for pos in positions %}
+                        <option value="{{ pos.0 }}" {% if position == pos.0 %}selected{% endif %}>{{ pos.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Work Station</label>
+                <select name="work_station" class="form-control">
+                    <option value="">-- Pilih Work Station --</option>
+                    {% for ws in work_stations %}
+                        <option value="{{ ws.0 }}" {% if work_station == ws.0 %}selected{% endif %}>{{ ws.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Remarks</label>
+                <textarea name="remarks" class="form-control" rows="3">{{ remarks }}</textarea>
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i> Simpan
+            </button>
+            <a href="{% url 'operator_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Kembali
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

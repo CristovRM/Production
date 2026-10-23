@@ -1,0 +1,52 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.index, name='phosphate'),
+
+    path('box/', views.box_phosphate_header, name='box_phosphate'),
+    path('box/edit/<int:header_id>/', views.box_phosphate_edit, name='box_phosphate_edit'),
+    path('box/delete/<int:header_id>/', views.box_phosphate_delete, name='box_phosphate_delete'),
+    path('box/detail/<int:header_id>/', views.box_phosphate_detail, name='box_phosphate_detail'),
+    path('box/detail/delete/<int:detail_id>/', views.box_phosphate_detail_delete, name='box_phosphate_detail_delete'),
+    path('box/report/<int:header_id>/', views.box_phosphate_report, name='box_phosphate_report'),
+    path('box/summary/', views.box_phosphate_summary, name='box_phosphate_summary'),
+    path('box/summary/detail/<int:header_id>/', views.box_phosphate_summary_detail, name='box_phosphate_summary_detail'),
+    path('box/report/all/', views.box_report_all, name='box_report_all'),
+    path('box/tracking/', views.box_protector_tracking, name='box_protector_tracking'),
+
+    path('pin/', views.pin_phosphate_header, name='pin_phosphate'),
+    path('pin/edit/<int:header_id>/', views.pin_phosphate_edit, name='pin_phosphate_edit'),
+    path('pin/delete/<int:header_id>/', views.pin_phosphate_delete, name='pin_phosphate_delete'),
+    path('pin/detail/<int:header_id>/', views.pin_phosphate_detail, name='pin_phosphate_detail'),
+    path('pin/detail/delete/<int:detail_id>/', views.pin_phosphate_detail_delete, name='pin_phosphate_detail_delete'),
+    path('pin/report/<int:header_id>/', views.pin_phosphate_report, name='pin_phosphate_report'),
+    path('pin/summary/', views.pin_phosphate_summary, name='pin_phosphate_summary'),
+    path('pin/summary/detail/<int:header_id>/', views.pin_phosphate_summary_detail, name='pin_phosphate_summary_detail'),
+    path('pin/report/all/', views.pin_report, name='pin_report'),
+    path('pin/pdf/<int:header_id>/', views.export_pin_pdf, name='export_pin_pdf'),
+    path('pin/tracking/', views.pin_protector_tracking, name='pin_protector_tracking'),
+
+    path('pipe/', views.pipe_phosphate_header, name='pipe_phosphate'),
+    path('pipe/edit/<int:header_id>/', views.pipe_phosphate_edit, name='pipe_phosphate_edit'),
+    path('pipe/delete/<int:header_id>/', views.pipe_phosphate_delete, name='pipe_phosphate_delete'),
+    path('pipe/detail/<int:header_id>/', views.pipe_phosphate_detail, name='pipe_phosphate_detail'),
+    path('pipe/detail/delete/<int:detail_id>/', views.pipe_phosphate_detail_delete, name='pipe_phosphate_detail_delete'),
+    path('pipe/update/<int:header_id>/<int:detail_id>/', views.pipe_phosphate_update, name='pipe_phosphate_update'),
+    path('pipe/report/<int:header_id>/', views.pipe_phosphate_report, name='pipe_phosphate_report'),
+    path('pipe/report/pdf/<int:header_id>/', views.pipe_phosphate_report_pdf, name='pipe_phosphate_report_pdf'),
+    path('pipe/summary/', views.pipe_phosphate_summary, name='pipe_phosphate_summary'),
+    path('pipe/summary/detail/<int:header_id>/', views.pipe_phosphate_summary_detail, name='pipe_phosphate_summary_detail'),
+    path('pipe/report/all/', views.pipe_phosphate_report_all, name='pipe_phosphate_report_all'),
+    
+    path('protector-install/', views.protector_install_header, name='protector_install'),
+    path('protector-install/detail/<int:header_id>/', views.protector_install_detail, name='protector_install_detail'),
+    path('protector-install/detail/delete/<int:detail_id>/', views.protector_install_detail_delete, name='protector_install_detail_delete'),
+    path('protector-install/update/<int:header_id>/<int:detail_id>/', views.protector_install_update, name='protector_install_update'),
+    path('protector-install/report/<int:header_id>/', views.protector_install_report, name='protector_install_report'),
+    path('protector-install/summary/', views.protector_install_summary, name='protector_install_summary'),
+    path('protector-install/summary/detail/<int:header_id>/', views.protector_install_summary_detail, name='protector_install_summary_detail'),
+    path('protector-install/summary/edit/<int:header_id>/', views.protector_install_summary_edit, name='protector_install_summary_edit'),
+    path('protector-install/summary/delete/<int:header_id>/', views.protector_install_summary_delete, name='protector_install_summary_delete'),
+    path('protector-install/tracking/', views.protector_joint_tracking, name='protector_joint_tracking'),
+]

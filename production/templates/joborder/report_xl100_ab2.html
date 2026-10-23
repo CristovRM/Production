@@ -1,0 +1,158 @@
+{% extends 'joborder/report_xl100_tbase.html' %}
+
+{% block extra_style %}
+.box-thread-header {
+    background-color: #e3f2fd;
+}
+
+.pin-thread-header {
+    background-color: #e8f5e8;
+}
+
+/* Highlight empty cells with light red background */
+.empty-cell {
+    background-color: #ffebee !important;
+}
+
+.conn-col {
+    width: 80px;
+}
+
+.date-col {
+    width: 90px;
+}
+
+.operator-col {
+    width: 80px;
+}
+
+.acc-reject-col {
+    width: 70px;
+}
+{% endblock %}
+
+{% block table_content %}
+{% if bjo_header.info.name|upper == 'P X P' or 'P X P' in bjo_header.info.name|upper or 'PXP' in bjo_header.info.name|upper %}
+    {# Template untuk P X P - PIN Thread 2x #}
+    <table class="tracking-table">
+        <thead>
+            <tr class="header-row-1">
+                <th rowspan="2" class="row-number">No</th>
+                <th rowspan="2" class="conn-col">Conn S/N</th>
+                <th colspan="3" class="pin-thread-header">Pin Thread</th>
+                <th colspan="3" class="pin-thread-header">Pin Thread</th>
+                <th rowspan="2" class="comments-col">Comments</th>
+            </tr>
+            <tr class="header-row-2">
+                <th class="pin-thread-header date-col">Date</th>
+                <th class="pin-thread-header operator-col">Operator Code</th>
+                <th class="pin-thread-header acc-reject-col">Acc/<br>Reject</th>
+                <th class="pin-thread-header date-col">Date</th>
+                <th class="pin-thread-header operator-col">Operator Code</th>
+                <th class="pin-thread-header acc-reject-col">Acc/<br>Reject</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for joint in joint_tracking %}
+            <tr class="data-row">
+                <td class="row-number">{{ forloop.counter }}</td>
+                <td {% if not joint.conn_number %}class="empty-cell"{% endif %}>{{ joint.conn_number|default:"" }}</td>
+                <td {% if not joint.pin_thread_date_1st %}class="empty-cell"{% endif %}>{{ joint.pin_thread_date_1st|date:"d M Y"|default:"" }}</td>
+                <td {% if not joint.pin_thread_operator_1st %}class="empty-cell"{% endif %}>{{ joint.pin_thread_operator_1st|default:"" }}</td>
+                <td {% if not joint.pin_acc_reject_1st %}class="empty-cell"{% endif %}>{{ joint.pin_acc_reject_1st|default:"" }}</td>
+                <td {% if not joint.pin_thread_date_2nd %}class="empty-cell"{% endif %}>{{ joint.pin_thread_date_2nd|date:"d M Y"|default:"" }}</td>
+                <td {% if not joint.pin_thread_operator_2nd %}class="empty-cell"{% endif %}>{{ joint.pin_thread_operator_2nd|default:"" }}</td>
+                <td {% if not joint.pin_acc_reject_2nd %}class="empty-cell"{% endif %}>{{ joint.pin_acc_reject_2nd|default:"" }}</td>
+                <td>{{ joint.comments|default:"" }}</td>
+            </tr>
+            {% empty %}
+            <tr class="data-row">
+                <td colspan="9" style="text-align: center;">No tracking data available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% elif bjo_header.info.name|upper == 'B X B' or 'B X B' in bjo_header.info.name|upper or 'BXB' in bjo_header.info.name|upper %}
+    {# Template untuk B X B - BOX Thread 2x #}
+    <table class="tracking-table">
+        <thead>
+            <tr class="header-row-1">
+                <th rowspan="2" class="row-number">No</th>
+                <th rowspan="2" class="conn-col">Conn S/N</th>
+                <th colspan="3" class="box-thread-header">Box Thread (1st)</th>
+                <th colspan="3" class="box-thread-header">Box Thread (2nd)</th>
+                <th rowspan="2" class="comments-col">Comments</th>
+            </tr>
+            <tr class="header-row-2">
+                <th class="box-thread-header date-col">Date</th>
+                <th class="box-thread-header operator-col">Operator Code</th>
+                <th class="box-thread-header acc-reject-col">Acc/<br>Reject</th>
+                <th class="box-thread-header date-col">Date</th>
+                <th class="box-thread-header operator-col">Operator Code</th>
+                <th class="box-thread-header acc-reject-col">Acc/<br>Reject</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for joint in joint_tracking %}
+            <tr class="data-row">
+                <td class="row-number">{{ forloop.counter }}</td>
+                <td {% if not joint.conn_number %}class="empty-cell"{% endif %}>{{ joint.conn_number|default:"" }}</td>
+                <td {% if not joint.box_thread_date_1st %}class="empty-cell"{% endif %}>{{ joint.box_thread_date_1st|date:"d M Y"|default:"" }}</td>
+                <td {% if not joint.box_thread_operator_1st %}class="empty-cell"{% endif %}>{{ joint.box_thread_operator_1st|default:"" }}</td>
+                <td {% if not joint.box_acc_reject_1st %}class="empty-cell"{% endif %}>{{ joint.box_acc_reject_1st|default:"" }}</td>
+                <td {% if not joint.box_thread_date_2nd %}class="empty-cell"{% endif %}>{{ joint.box_thread_date_2nd|date:"d M Y"|default:"" }}</td>
+                <td {% if not joint.box_thread_operator_2nd %}class="empty-cell"{% endif %}>{{ joint.box_thread_operator_2nd|default:"" }}</td>
+                <td {% if not joint.box_acc_reject_2nd %}class="empty-cell"{% endif %}>{{ joint.box_acc_reject_2nd|default:"" }}</td>
+                <td>{{ joint.comments|default:"" }}</td>
+            </tr>
+            {% empty %}
+            <tr class="data-row">
+                <td colspan="9" style="text-align: center;">No tracking data available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% else %}
+    {# Template NORMAL - BOX Thread + PIN Thread #}
+    <table class="tracking-table">
+        <thead>
+            <tr class="header-row-1">
+                <th rowspan="2" class="row-number">No</th>
+                <th rowspan="2" class="conn-col">Conn S/N</th>
+                <th colspan="3" class="box-thread-header">Box Thread</th>
+                <th colspan="3" class="pin-thread-header">Pin Thread</th>
+                <th rowspan="2" class="comments-col">Comments</th>
+            </tr>
+            <tr class="header-row-2">
+                <th class="box-thread-header date-col">Date</th>
+                <th class="box-thread-header operator-col">Operator Code</th>
+                <th class="box-thread-header acc-reject-col">Acc/<br>Reject</th>
+                <th class="pin-thread-header date-col">Date</th>
+                <th class="pin-thread-header operator-col">Operator Code</th>
+                <th class="pin-thread-header acc-reject-col">Acc/<br>Reject</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for joint in joint_tracking %}
+            <tr class="data-row">
+                <td class="row-number">{{ forloop.counter }}</td>
+                <td {% if not joint.conn_number %}class="empty-cell"{% endif %}>{{ joint.conn_number|default:"" }}</td>
+                <td {% if not joint.box_thread_date %}class="empty-cell"{% endif %}>{{ joint.box_thread_date|date:"d M Y"|default:"" }}</td>
+                <td {% if not joint.box_thread_operator %}class="empty-cell"{% endif %}>{{ joint.box_thread_operator|default:"" }}</td>
+                <td {% if not joint.box_acc_reject %}class="empty-cell"{% endif %}>{{ joint.box_acc_reject|default:"" }}</td>
+                <td {% if not joint.pin_thread_date %}class="empty-cell"{% endif %}>{{ joint.pin_thread_date|date:"d M Y"|default:"" }}</td>
+                <td {% if not joint.pin_thread_operator %}class="empty-cell"{% endif %}>{{ joint.pin_thread_operator|default:"" }}</td>
+                <td {% if not joint.pin_acc_reject %}class="empty-cell"{% endif %}>{{ joint.pin_acc_reject|default:"" }}</td>
+                <td>{{ joint.comments|default:"" }}</td>
+            </tr>
+            {% empty %}
+            <tr class="data-row">
+                <td colspan="9" style="text-align: center;">No tracking data available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+{% endblock %}

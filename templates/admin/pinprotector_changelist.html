@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block object-tools %}
+    {{ block.super }}
+     <div style="margin-bottom:10px;">
+        <a class="button" href="{% url 'admin:generate_pin_protectors' %}">Generate PIN Protector Numbers</a>
+    </div>
+
+{% endblock %}

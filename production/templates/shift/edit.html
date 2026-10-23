@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Edit shift{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">Edit Shift</div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="name" class="form-label">Nama Shift</label>
+                    <input type="text" name="name" class="form-control" value="{{ item.name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="remarks" class="form-label">Remarks</label>
+                    <textarea name="remarks" class="form-control" rows="3">{{ item.remarks }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                <a href="{% url 'shift_list' %}" class="btn btn-secondary">Batal</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

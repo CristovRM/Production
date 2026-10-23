@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Sign-Out Report - XL-100</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+            @page { margin: 0.5in; }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            margin: 20px;
+            background: white;
+            line-height: 1.2;
+        }
+        
+        .page-container {
+            position: relative;
+            width: 100%;
+            max-width: 11in;
+            margin: 0 auto;
+            border: 3px solid blue;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        
+        .form-type-badge {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: transparent;
+            color: #000000;
+            padding: 0;
+            font-size: 9px;
+            font-weight: normal;
+            z-index: 10;
+            margin-bottom: 5px;
+        }
+        
+        .header-date {
+            text-align: right;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .left-info {
+            width: 25%;
+            font-size: 11px;
+        }
+        
+        .center-content {
+            width: 50%;
+            text-align: center;
+        }
+        
+        .right-info {
+            width: 25%;
+            font-size: 11px;
+        }
+        
+        .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: blue;
+            margin-bottom: 10px;
+        }
+        
+        .report-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: red;
+            margin-bottom: 15px;
+        }
+        
+        .info-line {
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            margin-right: 5px;
+            min-width: 70px;
+        }
+        
+        .info-value {
+            color: blue;
+            font-weight: bold;
+        }
+        
+        .description-box {
+            text-align: center;
+            font-weight: bold;
+            margin: 15px 0;
+            font-size: 12px;
+            padding: 5px;
+        }
+        
+        .tracking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 30px;
+            border: 2px solid blue;
+        }
+        
+        .tracking-table th,
+        .tracking-table td {
+            border: 1px solid blue;
+            padding: 6px 4px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 10px;
+        }
+        
+        .tracking-table th {
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+        
+        .header-row-1 th {
+            height: 25px;
+        }
+        
+        .header-row-2 th {
+            height: 20px;
+        }
+        
+        .joint-number {
+            font-weight: bold;
+        }
+        
+        .row-number {
+            font-weight: bold;
+            width: 30px;
+        }
+        
+        .joint-col {
+            width: 60px;
+        }
+        
+        .protector-col {
+            width: 70px;
+        }
+        
+        .date-col {
+            width: 60px;
+        }
+        
+        .operator-col {
+            width: 65px;
+        }
+        
+        .comments-col {
+            width: 100px;
+        }
+        
+        .data-row {
+            height: 22px;
+        }
+        
+        .data-row:nth-child(even) {
+            background-color: #fafafa;
+        }
+        
+        .print-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .print-btn:hover {
+            background: #0056b3;
+        }
+
+        {% block extra_style %}{% endblock %}
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">Print Report</button>
+    
+    <div class="page-container">
+        <div class="form-type-badge">XL-100{{ form_type }} REV 0</div>
+        
+        <div class="header-date">
+            ISSUED: {{ current_date }}
+        </div>
+        
+        <div class="main-header">
+            <div class="left-info">
+                <div class="info-line">
+                    <span class="info-label">C.O.#</span>
+                    <span class="info-value">{{ bjo_header.bt|default:"" }}</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">J.O.#</span>
+                    <span class="info-value">{{ bjo_header.bjo }}</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">Grade=</span>
+                    <span class="info-value">{{ bjo_header.ct_reference|default:"" }}</span>
+                </div>
+            </div>
+            
+            <div class="center-content">
+                <div class="company-name">XL Systems, L.P.</div>
+                <div class="report-title">Production Sign-Out</div>
+            </div>
+            
+            <div class="right-info">
+                <div class="info-line">
+                    <span class="info-label">Prepared By:</span>
+                    <span class="info-value">Kuwato</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">Due Date:</span>
+                    <span class="info-value">{{ bjo_header.end_date|date:"j M Y"|default:"" }}</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">Customer:</span>
+                    <span class="info-value">{{ bjo_header.customer|upper }}</span>
+                </div>
+                <div class="info-line">
+                    <span class="info-label">Lube =</span>
+                    <span class="info-value">{{ bjo_header.lube|default:"" }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="description-box">
+            {{ bjo_header.product }}
+        </div>
+        
+        {% block table_content %}{% endblock %}
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = months[now.getMonth()];
+            const year = now.getFullYear();
+            const hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            
+            const dateString = `${day} ${month} ${year} ${displayHours}:${minutes} ${ampm}`;
+            
+            const header = document.querySelector('.header-date');
+            if (header && header.textContent.includes('{{')) {
+                header.textContent = 'ISSUED: ' + dateString;
+            }
+        });
+    </script>
+</body>
+</html>

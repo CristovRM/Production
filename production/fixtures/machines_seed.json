@@ -1,0 +1,112 @@
+[
+  {
+    "model": "production.machine",
+    "pk": 1,
+    "fields": {
+      "name": "NB 48",
+      "process_type": 1,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.machine",
+    "pk": 2,
+    "fields": {
+      "name": "INS 1",
+      "process_type": 1,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.machine",
+    "pk": 3,
+    "fields": {
+      "name": "INS 2",
+      "process_type": 1,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.machine",
+    "pk": 4,
+    "fields": {
+      "name": "VTLEX",
+      "process_type": 1,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.machine",
+    "pk": 5,
+    "fields": {
+      "name": "OKUMA",
+      "process_type": 1,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.machine",
+    "pk": 6,
+    "fields": {
+      "name": "SR 1",
+      "process_type": 2,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.machine",
+    "pk": 7,
+    "fields": {
+      "name": "SR 2",
+      "process_type": 2,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.machine",
+    "pk": 8,
+    "fields": {
+      "name": "SR 3",
+      "process_type": 2,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.machine",
+    "pk": 9,
+    "fields": {
+      "name": "ESAP",
+      "process_type": 2,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "production.machine",
+    "pk": 10,
+    "fields": {
+      "name": "LINCOND",
+      "process_type": 2,
+      "machine_capacity": "100.000",
+      "created_at": "2025-01-01T00:00:00Z",
+      "modified_at": "2025-01-01T00:00:00Z"
+    }
+  }
+]

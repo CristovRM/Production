@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Tracking BJO data{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <!-- Header Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Tracking BJO {{ bjo_header.bjo }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><strong>Customer:</strong> {{ bjo_header.customer }}</h6>
+                            <h6><strong>Size:</strong> {{ bjo_header.size }}</h6>
+                            <h6><strong>Connection:</strong> {{ bjo_header.conn }}</h6>
+                            {% if bjo_header.info %}
+                            <h6><strong>Info Tag:</strong> 
+                                <span class="badge {% if is_pxp %}bg-success{% elif is_bxb %}bg-primary{% else %}bg-secondary{% endif %}">
+                                    {{ bjo_header.info.name }}
+                                </span>
+                            </h6>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6><strong>Description:</strong> {{ bjo_header.product }}</h6>
+                            <h6><strong>Quantity:</strong> {{ bjo_header.qty }} joints</h6>
+                            <h6><strong>Status:</strong> 
+                                {% if bjo_header.is_finish %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">In Progress</span>
+                                {% endif %}
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Button and Print Report -->
+    <div class="d-flex justify-content-between mb-3">
+        <a href="{% url 'joborder_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Job Order List
+        </a>
+        {% if bjo_header.bjo_for == 'PIPE' or bjo_header.bjo_for == 'BOX PROTECTOR' or bjo_header.bjo_for == 'PIN PROTECTOR' %}
+        <a href="{% url 'joborder_print_report' bjo_header.id %}" class="btn btn-danger" target="_blank">
+            <i class="fas fa-print me-1"></i> Print XL100 Report
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Dynamic Content Based on BJO Type -->
+    {% if bjo_header.bjo_for == 'PIPE' %}
+        {% if is_weld %}
+            {% include 'joborder/tracking_weld.html' %}
+        {% elif is_pxp %}
+            {% include 'joborder/tracking_pxp.html' %}
+        {% elif is_bxb %}
+            {% include 'joborder/tracking_bxb.html' %}
+        {% else %}
+            {% include 'joborder/tracking_thread.html' %}
+        {% endif %}
+    {% elif bjo_header.bjo_for == 'BOX PROTECTOR' %}
+        {% include 'joborder/tracking_box_protector.html' %}
+    {% elif bjo_header.bjo_for == 'PIN PROTECTOR' %}
+        {% include 'joborder/tracking_pin_protector.html' %}
+    {% else %}
+        <div class="card">
+            <div class="card-body text-center">
+                <p class="text-muted">BJO type not recognized</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.card-header {
+    font-weight: 600;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 13px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.table td {
+    font-size: 13px;
+}
+
+.bg-primary {
+    background-color: #0d6efd !important;
+}
+
+.bg-success {
+    background-color: #198754 !important;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid #dee2e6 !important;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.card {
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.table tbody td[style*="background-color: #f8f9fa"] {
+    font-style: italic;
+}
+
+.badge.bg-dark {
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.badge.bg-primary, .badge.bg-info {
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table thead h6 {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+
+.text-start {
+    text-align: left !important;
+}
+
+.text-end {
+    text-align: right !important;
+}
+</style>
+{% endblock %}

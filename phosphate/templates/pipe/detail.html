@@ -1,0 +1,574 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row align-items-center justify-content-between">
+        <div class="col-12 col-md-6 mb-2">
+            <h2 class="mb-3">PIPE Phosphate Record</h2>
+        </div>
+        <div class="col-12 col-md-6 text-md-end text-start mb-2">
+            <a class="btn btn-warning text-uppercase me-2" href="{% url 'pipe_phosphate_report_pdf' header.id %}" target="_blank">
+                Export ke PDF
+            </a>
+            <a class="btn btn-secondary text-uppercase me-2" href="{% url 'pipe_phosphate_report' header.id %}" target="_blank">Cetak Laporan</a>
+            <a class="btn btn-primary text-uppercase" href="{% url 'pipe_phosphate' %}">Selesai</a>
+        </div>
+    </div>
+
+    {% if header %}
+        <div class="card p-3 mb-3">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tr><td width="150">Date</td><td width="10">:</td><td>{{ header.created_at|date:"d F Y" }}</td></tr>
+                    <tr><td>Job Order</td><td>:</td><td>{{ header.bjo.bjo }}</td></tr>
+                    <tr><td>Station</td><td>:</td><td>{{ header.station }}</td></tr>
+                    <tr><td>Shift</td><td>:</td><td>{{ header.shift }}</td></tr>
+                    <tr><td>Operator</td><td>:</td><td>{{ header.operator.name }}</td></tr>
+                </table>
+            </div>
+
+            <form method="post" action="{% url 'pipe_phosphate_detail' header.id %}">
+                {% csrf_token %}
+                <div class="row mb-2 gy-2">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Joint Number <small class="text-muted">(type to search)</small></label>
+                        <div class="searchable-select" id="joint_searchable">
+                            <input type="text" 
+                                   id="joint_search" 
+                                   class="form-control searchable-input" 
+                                   placeholder="Type to search Joint Number..." 
+                                   autocomplete="off">
+                            <div class="searchable-dropdown" id="joint_dropdown">
+                                <div class="dropdown-item" data-value="">---Choose Joint Number---</div>
+                                {% for pipe in pipe_list %}
+                                    <div class="dropdown-item" 
+                                         data-value="{{ pipe.id }}"
+                                         data-box="{{ pipe.is_box_phosphated|yesno:'true,false' }}"
+                                         data-pin="{{ pipe.is_pin_phosphated|yesno:'true,false' }}"
+                                         data-box-threaded="{{ pipe.is_box_threaded|yesno:'true,false' }}"
+                                         data-pin-threaded="{{ pipe.is_pin_threaded|yesno:'true,false' }}">
+                                        {{ pipe.joint_number }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="joint_number" id="joint_hidden">
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Side to Phosphate</label>
+                        <select name="side_phosphate" id="id_side_phosphate" class="form-control" disabled>
+                            <option value="">---Choose side to Phosphate---</option>
+                            <option value="BOX">BOX</option>
+                            <option value="PIN">PIN</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-danger w-100 text-uppercase">Simpan</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    {% else %}
+        <p class="text-center text-danger">Belum ada data yang tersimpan.</p>
+    {% endif %}
+
+    <div class="card p-3">
+        {% if messages %}
+        <div class="container mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show auto-hide-alert" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>No.</th>
+                        <th>Joint Number</th>
+                        <th>Box Side Status</th>
+                        <th>PIN Side Status</th>
+                        <th>Completed?</th>
+                        <th width="250">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detail in header.pipephosphate_details.all %}
+                    <tr>
+                        <td class="text-end">{{ forloop.counter }}</td>
+                        <td>{{ detail.joint_number.joint_number }}</td>
+                        <td>
+                            {% if detail.joint_number.is_box_phosphated %}
+                                <span class="badge bg-success">Phosphated</span>
+                            {% else %}
+                                <span class="badge bg-danger">Not yet</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if detail.joint_number.is_pin_phosphated %}
+                                <span class="badge bg-success">Phosphated</span>
+                            {% else %}
+                                <span class="badge bg-danger">Not yet</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if detail.joint_number.is_box_phosphated and detail.joint_number.is_pin_phosphated %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-secondary">In progress</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if detail.joint_number.is_box_phosphated and detail.joint_number.is_pin_phosphated %}
+                                <!-- Completed: Delete dengan warning ekstra -->
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger" 
+                                        onclick="confirmDeleteCompleted('{{ detail.id }}', '{{ detail.joint_number.joint_number }}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            {% else %}
+                                <!-- In Progress: Update & Delete biasa -->
+                                {% if not detail.joint_number.is_box_phosphated and detail.joint_number.is_box_threaded %}
+                                    <form method="post" action="{% url 'pipe_phosphate_update' header.id detail.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="side_phosphate" value="BOX">
+                                        <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Update BOX side untuk joint {{ detail.joint_number.joint_number }}?')">
+                                            <i class="bi bi-box"></i> Update BOX
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                
+                                {% if not detail.joint_number.is_pin_phosphated and detail.joint_number.is_pin_threaded %}
+                                    <form method="post" action="{% url 'pipe_phosphate_update' header.id detail.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="side_phosphate" value="PIN">
+                                        <button type="submit" class="btn btn-sm btn-info" onclick="return confirm('Update PIN side untuk joint {{ detail.joint_number.joint_number }}?')">
+                                            <i class="bi bi-pin-angle"></i> Update PIN
+                                        </button>
+                                    </form>
+                                {% endif %}
+
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger" 
+                                        onclick="confirmDelete('{{ detail.id }}', '{{ detail.joint_number.joint_number }}', '{% if detail.joint_number.is_box_phosphated %}BOX,{% endif %}{% if detail.joint_number.is_pin_phosphated %}PIN,{% endif %}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-warning">Belum ada data.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal (untuk In Progress) -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus data ini?</p>
+                <p class="fw-bold" id="deleteItemName"></p>
+                <p class="text-muted small" id="deleteSideInfo"></p>
+                <p class="text-warning small"><i class="bi bi-exclamation-triangle"></i> Status phosphate akan dikembalikan ke status awal</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form method="post" id="deleteForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Ya, Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Completed Joint Modal (dengan warning ekstra) -->
+<div class="modal fade" id="deleteCompletedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill"></i> PERINGATAN!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger mb-3">
+                    <strong>Joint ini sudah COMPLETED!</strong><br>
+                    Kedua sisi (BOX & PIN) sudah di-phosphate.
+                </div>
+                <p class="fw-bold" id="deleteCompletedItemName"></p>
+                <p class="text-danger"><i class="bi bi-exclamation-circle"></i> Menghapus data ini akan:</p>
+                <ul class="text-danger">
+                    <li>Menghapus status phosphate BOX</li>
+                    <li>Menghapus status phosphate PIN</li>
+                    <li>Joint kembali ke status awal</li>
+                </ul>
+                <p class="fw-bold text-center mt-3">Apakah Anda YAKIN ingin melanjutkan?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <form method="post" id="deleteCompletedForm" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill"></i> Ya, Hapus Data Completed
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Custom alert styles */
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-error, .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-info {
+    background-color: #cce8f4;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+/* Smooth fade out animation for auto-hiding alerts */
+.alert.fade {
+    transition: opacity 0.5s ease-out;
+}
+
+.alert i {
+    vertical-align: middle;
+}
+
+/* Searchable Select Styling */
+.searchable-select {
+    position: relative;
+}
+
+.searchable-input {
+    cursor: pointer;
+    text-align: left !important;
+}
+
+.searchable-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.15s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #e9ecef;
+}
+
+.dropdown-item.selected {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 500;
+}
+
+.dropdown-item.hidden {
+    display: none;
+}
+
+.no-results {
+    padding: 12px;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+/* Visual indicator untuk field yang sudah diisi */
+.searchable-input.has-value {
+    background-color: #e8f5e8;
+    font-weight: 500;
+}
+
+/* Delete button styling */
+.btn-sm {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    margin: 2px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide alerts
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 4000);
+    });
+
+    // Searchable Select Class
+    class SearchableSelect {
+        constructor(containerSelector, options = {}) {
+            this.container = document.querySelector(containerSelector);
+            if (!this.container) return;
+            
+            this.input = this.container.querySelector('.searchable-input');
+            this.dropdown = this.container.querySelector('.searchable-dropdown');
+            this.hiddenInput = this.container.querySelector('input[type="hidden"]');
+            
+            this.placeholder = options.placeholder || 'Type to search...';
+            this.onSelect = options.onSelect || function() {};
+            this.originalItems = [];
+            this.selectedValue = '';
+            this.selectedText = '';
+            
+            this.init();
+        }
+        
+        init() {
+            // Store original items with all data attributes
+            this.originalItems = Array.from(this.dropdown.children).map(item => ({
+                element: item.cloneNode(true),
+                value: item.dataset.value,
+                text: item.textContent.trim().toLowerCase(),
+                originalText: item.textContent.trim(),
+                isBox: item.dataset.box,
+                isPin: item.dataset.pin,
+                boxThreaded: item.dataset.boxThreaded,
+                pinThreaded: item.dataset.pinThreaded
+            }));
+            
+            this.setupEvents();
+        }
+        
+        setupEvents() {
+            // Focus event
+            this.input.addEventListener('focus', () => {
+                this.showDropdown();
+            });
+            
+            // Blur event with delay for dropdown click
+            this.input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    this.hideDropdown();
+                }, 200);
+            });
+            
+            // Input event for filtering
+            this.input.addEventListener('input', () => {
+                this.filterItems();
+            });
+            
+            // Click outside to close
+            document.addEventListener('click', (e) => {
+                if (!this.container.contains(e.target)) {
+                    this.hideDropdown();
+                }
+            });
+        }
+        
+        showDropdown() {
+            this.dropdown.style.display = 'block';
+            this.filterItems();
+        }
+        
+        hideDropdown() {
+            this.dropdown.style.display = 'none';
+        }
+        
+        filterItems() {
+            const searchTerm = this.input.value.toLowerCase().trim();
+            this.dropdown.innerHTML = '';
+            
+            let visibleCount = 0;
+            
+            this.originalItems.forEach(item => {
+                if (searchTerm === '' || item.text.includes(searchTerm)) {
+                    const clonedItem = item.element.cloneNode(true);
+                    
+                    // Highlight if this is the currently selected item
+                    if (item.value === this.selectedValue) {
+                        clonedItem.classList.add('selected');
+                    }
+                    
+                    clonedItem.addEventListener('click', () => {
+                        this.selectItem(item.value, item.originalText, item);
+                    });
+                    
+                    this.dropdown.appendChild(clonedItem);
+                    visibleCount++;
+                }
+            });
+            
+            // Show "no results" message
+            if (visibleCount === 0 && searchTerm !== '') {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No results found';
+                this.dropdown.appendChild(noResults);
+            }
+        }
+        
+        selectItem(value, text, itemData) {
+            this.selectedValue = value;
+            this.selectedText = text;
+            this.input.value = text;
+            this.hiddenInput.value = value;
+            
+            // Visual indicator
+            if (value) {
+                this.input.classList.add('has-value');
+            } else {
+                this.input.classList.remove('has-value');
+            }
+            
+            this.hideDropdown();
+            this.onSelect(value, text, itemData);
+        }
+        
+        reset() {
+            this.input.value = '';
+            this.input.classList.remove('has-value');
+            this.hiddenInput.value = '';
+            this.selectedValue = '';
+            this.selectedText = '';
+        }
+    }
+
+    // Initialize Joint Number Searchable Select
+    const jointSelect = new SearchableSelect('#joint_searchable', {
+        placeholder: 'Type to search Joint Number...',
+        onSelect: function(value, text, itemData) {
+            console.log('Joint selected:', value, text);
+            updateSideOptions(itemData);
+        }
+    });
+
+    // Function to update side options based on selected joint
+    function updateSideOptions(itemData) {
+        const sideSelect = document.getElementById('id_side_phosphate');
+        
+        if (!itemData || !itemData.value) {
+            sideSelect.disabled = true;
+            sideSelect.innerHTML = '<option value="">---Choose side to Phosphate---</option>';
+            return;
+        }
+        
+        const isBox = itemData.isBox === 'true';
+        const isPin = itemData.isPin === 'true';
+        const boxThreaded = itemData.boxThreaded === 'true';
+        const pinThreaded = itemData.pinThreaded === 'true';
+
+        sideSelect.disabled = false;
+        sideSelect.innerHTML = '<option value="">---Choose side to Phosphate---</option>';
+
+        // Tampilkan BOX jika belum phosphated dan sudah threaded
+        if (!isBox) {
+            if (boxThreaded) {
+                sideSelect.innerHTML += '<option value="BOX">BOX (Threaded ✓)</option>';
+            } else {
+                sideSelect.innerHTML += '<option value="BOX" disabled>BOX (Not Threaded ✗)</option>';
+            }
+        }
+        
+        // Tampilkan PIN jika belum phosphated dan sudah threaded
+        if (!isPin) {
+            if (pinThreaded) {
+                sideSelect.innerHTML += '<option value="PIN">PIN (Threaded ✓)</option>';
+            } else {
+                sideSelect.innerHTML += '<option value="PIN" disabled>PIN (Not Threaded ✗)</option>';
+            }
+        }
+        
+        if (isBox && isPin) {
+            sideSelect.disabled = true;
+            sideSelect.innerHTML = '<option value="">Already Phosphated</option>';
+        }
+    }
+});
+
+// Delete confirmation function (untuk in-progress)
+function confirmDelete(detailId, jointNumber, sides) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const deleteForm = document.getElementById('deleteForm');
+    const itemName = document.getElementById('deleteItemName');
+    const sideInfo = document.getElementById('deleteSideInfo');
+    
+    // Set joint number in modal
+    itemName.textContent = 'Joint Number: ' + jointNumber;
+    
+    // Clean up sides string (remove trailing comma)
+    const cleanSides = sides.replace(/,\s*$/, '').replace(/,/g, ' & ');
+    sideInfo.textContent = cleanSides ? 'Sisi yang akan dihapus: ' + cleanSides : 'Tidak ada sisi yang di-phosphate';
+    
+    // Set form action
+    deleteForm.action = "{% url 'pipe_phosphate_detail_delete' 0 %}".replace('0', detailId);
+    
+    // Show modal
+    modal.show();
+}
+
+// Delete confirmation for COMPLETED joints (dengan warning ekstra)
+function confirmDeleteCompleted(detailId, jointNumber) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteCompletedModal'));
+    const deleteForm = document.getElementById('deleteCompletedForm');
+    const itemName = document.getElementById('deleteCompletedItemName');
+    
+    // Set joint number in modal
+    itemName.textContent = 'Joint Number: ' + jointNumber;
+    
+    // Set form action
+    deleteForm.action = "{% url 'pipe_phosphate_detail_delete' 0 %}".replace('0', detailId);
+    
+    // Show modal
+    modal.show();
+}
+</script>
+{% endblock %}

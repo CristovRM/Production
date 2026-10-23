@@ -1,0 +1,639 @@
+{% extends 'base.html' %}
+{% block title %}Batam Job Orders list{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <!-- Django Messages Display -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show auto-hide-alert" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <h2 class="mb-4">Job Order</h2>
+
+    <!-- Tombol Cetak PDF & Tambah di kanan -->
+    <div class="d-flex justify-content-end flex-wrap mb-3 gap-2">
+        <a href="{% url 'joborder_pdf' %}?q={{ query }}&bjo={{ filter_bjo }}&bt={{ filter_bt }}&process={{ filter_process }}&year={{ filter_year }}&month={{ filter_month }}&date={{ filter_date }}&status={{ filter_status }}"
+           class="btn btn-danger text-white"
+           target="_blank">
+            <i class="fas fa-file-pdf me-1"></i> Export to PDF
+        </a>
+        <a href="{% url 'joborder_add' %}" class="btn btn-success">
+            <i class="fas fa-plus me-1"></i> Add Job Order
+        </a>
+    </div>
+
+    <!-- Filter dan Search -->
+    <form method="get" id="filterForm" class="card p-3 mb-3" data-ajax-url="{% url 'get_filter_options' %}">
+        <div class="row g-3">
+            <!-- Baris Pertama -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Search</label>
+                <input type="text" name="q" class="form-control" placeholder="Search Customer or Description..." value="{{ query }}">
+            </div>
+            
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Filter by Process <span class="text-danger">*</span></label>
+                <select name="process" id="processSelect" class="form-select">
+                    <option value="">-- All Process --</option>
+                    {% for process_option in process_options %}
+                        <option value="{{ process_option.id }}" {% if process_option.id|stringformat:"s" == filter_process %}selected{% endif %}>{{ process_option.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Filter by BJO <small class="text-muted">(type to search)</small></label>
+                <div class="searchable-select" id="bjo_searchable">
+                    <input type="text" 
+                           id="bjo_search" 
+                           class="form-control searchable-input" 
+                           placeholder="Type to search BJO..." 
+                           autocomplete="off"
+                           value="{{ filter_bjo }}">
+                    <div class="searchable-dropdown" id="bjo_dropdown">
+                        <div class="dropdown-item" data-value="">-- All BJO --</div>
+                        {% for bjo_option in bjo_options %}
+                            <div class="dropdown-item" 
+                                 data-value="{{ bjo_option }}"
+                                 {% if bjo_option == filter_bjo %}data-selected="true"{% endif %}>
+                                {{ bjo_option }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="bjo" id="bjo_hidden" value="{{ filter_bjo }}">
+                </div>
+            </div>
+            
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Filter by BT <small class="text-muted">(type to search)</small></label>
+                <div class="searchable-select" id="bt_searchable">
+                    <input type="text" 
+                           id="bt_search" 
+                           class="form-control searchable-input" 
+                           placeholder="Type to search BT..." 
+                           autocomplete="off"
+                           value="{{ filter_bt }}">
+                    <div class="searchable-dropdown" id="bt_dropdown">
+                        <div class="dropdown-item" data-value="">-- All BT --</div>
+                        {% for bt_option in bt_options %}
+                            <div class="dropdown-item" 
+                                 data-value="{{ bt_option }}"
+                                 {% if bt_option == filter_bt %}data-selected="true"{% endif %}>
+                                {{ bt_option }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="bt" id="bt_hidden" value="{{ filter_bt }}">
+                </div>
+            </div>
+
+            <!-- Baris Kedua -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">-- All Status --</option>
+                    <option value="completed" {% if filter_status == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="in_progress" {% if filter_status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Year</label>
+                <select name="year" class="form-select" id="yearSelect">
+                    <option value="">-- All Year --</option>
+                    {% for year in year_options %}
+                        <option value="{{ year }}" {% if year|stringformat:"s" == filter_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Month</label>
+                <select name="month" class="form-select" id="monthSelect" {% if not filter_year %}disabled{% endif %}>
+                    <option value="">-- All Month --</option>
+                    {% for month_num, month_name in month_options %}
+                        <option value="{{ month_num }}" {% if month_num|stringformat:"s" == filter_month %}selected{% endif %}>{{ month_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label">Date</label>
+                <input type="date" name="date" class="form-control" value="{{ filter_date }}">
+            </div>
+
+            <!-- Tombol Filter & Reset -->
+            <div class="col-12 d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-primary flex-fill">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+                <a href="{% url 'joborder_list' %}" class="btn btn-warning text-dark flex-fill">
+                    <i class="fas fa-refresh me-1"></i> Reset
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Info Filter Aktif -->
+    {% if query or filter_bjo or filter_bt or filter_process or filter_year or filter_month or filter_date or filter_status %}
+    <div class="alert alert-info">
+        <strong>Active Filter:</strong>
+        {% if query %}<span class="badge bg-primary me-1">Search: {{ query }}</span>{% endif %}
+        {% if filter_process %}
+            {% for process_option in process_options %}
+                {% if process_option.id|stringformat:"s" == filter_process %}
+                    <span class="badge bg-success me-1">Process: {{ process_option.name }}</span>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        {% if filter_bjo %}<span class="badge bg-primary me-1">BJO: {{ filter_bjo }}</span>{% endif %}
+        {% if filter_bt %}<span class="badge bg-primary me-1">BT: {{ filter_bt }}</span>{% endif %}
+        {% if filter_year %}<span class="badge bg-primary me-1">Year: {{ filter_year }}</span>{% endif %}
+        {% if filter_month %}<span class="badge bg-primary me-1">Month: {{ filter_month }}</span>{% endif %}
+        {% if filter_date %}<span class="badge bg-primary me-1">Date: {{ filter_date }}</span>{% endif %}
+        {% if filter_status %}<span class="badge bg-primary me-1">Status: {% if filter_status == 'completed' %}Completed{% else %}In Progress{% endif %}</span>{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Tabel -->
+    <div class="card p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>BJO</th>
+                        <th>BT</th>
+                        <th>Customer</th>
+                        <th>Size</th>
+                        <th>Conn</th>
+                        <th>Description</th>
+                        <th>BJO For</th>
+                        <th>Composite</th>
+                        <th>Qty</th>
+                        <th>Processed</th>
+                        <th>Remains</th>
+                        <th>Status</th>
+                        <th>Start Date</th>
+                        <th>Finish Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in headers %}
+                    <tr>
+                        <td>{{ forloop.counter0|add:headers.start_index }}</td>
+                        <td>
+                            <a href="{% url 'joborder_tracking' item.id %}" class="fw-bold text-decoration-none">
+                                {{ item.bjo }}
+                            </a>
+                        </td>
+                        <td>{{ item.bt|default:"-" }}</td>
+                        <td>{{ item.customer }}</td>
+                        <td>{{ item.size }}</td>
+                        <td>{{ item.conn }}</td>
+                        <td>{{ item.product }}</td>
+                        <td>{{ item.bjo_for }}</td>
+                        <td>
+                            {% if item.is_composite %}
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-check me-1"></i>Composite
+                                </span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.qty }}</td>
+                        <td>{{ item.total_finished }}</td>
+                        <td>
+                            {% if item.remaining_qty == "N/A" %}
+                                <span class="text-muted">{{ item.remaining_qty }}</span>
+                            {% elif item.remaining_qty == 0 %}
+                                <span class="text-success">{{ item.remaining_qty }}</span>
+                            {% else %}
+                                {{ item.remaining_qty }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.is_finish %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">In Progress</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.start_date }}</td>
+                        <td>{{ item.finish_date }}</td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{% url 'joborder_detail' item.id %}" class="btn btn-sm btn-outline-info" title="Detail">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="confirmEdit('{{ item.bjo }}', '{% url 'joborder_edit' item.id %}')" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="confirmDelete('{{ item.bjo }}', '{{ item.id }}')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="16" class="text-center">There are no job orders with the selected filter.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if headers.has_other_pages %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if headers.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ headers.previous_page_number }}&q={{ query }}&bjo={{ filter_bjo }}&bt={{ filter_bt }}&process={{ filter_process }}&year={{ filter_year }}&month={{ filter_month }}&date={{ filter_date }}&status={{ filter_status }}">←</a>
+                </li>
+                {% endif %}
+                {% for num in headers.paginator.page_range %}
+                    {% if num == headers.number %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num >= headers.number|add:'-2' and num <= headers.number|add:'2' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}&q={{ query }}&bjo={{ filter_bjo }}&bt={{ filter_bt }}&process={{ filter_process }}&year={{ filter_year }}&month={{ filter_month }}&date={{ filter_date }}&status={{ filter_status }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                {% if headers.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ headers.next_page_number }}&q={{ query }}&bjo={{ filter_bjo }}&bt={{ filter_bt }}&process={{ filter_process }}&year={{ filter_year }}&month={{ filter_month }}&date={{ filter_date }}&status={{ filter_status }}">→</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Edit -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Edit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to edit the Job Order <strong id="bjoToEdit"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a id="editConfirmButton" href="#" class="btn btn-primary">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Konfirmasi Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the Job Order <strong id="bjoToDelete"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone and will delete all associated data!</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+.alert-error, .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+.alert-info {
+    background-color: #cce8f4;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+.alert.fade {
+    transition: opacity 0.5s ease-out;
+}
+.alert i {
+    vertical-align: middle;
+}
+.searchable-select {
+    position: relative;
+}
+.searchable-input {
+    cursor: pointer;
+    text-align: left !important;
+    padding-right: 35px !important;
+}
+.searchable-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+.dropdown-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.15s ease;
+}
+.dropdown-item:hover {
+    background-color: #e9ecef;
+}
+.dropdown-item.selected {
+    background-color: #0d6efd;
+    color: white;
+    font-weight: 500;
+}
+.dropdown-item.hidden {
+    display: none;
+}
+.no-results {
+    padding: 12px;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+    font-size: 0.875rem;
+}
+.searchable-input.has-value {
+    background-color: #e8f5e8;
+    font-weight: 500;
+}
+.searchable-input.loading {
+    background-color: #f8f9fa;
+    cursor: wait;
+}
+.searchable-clear-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 24px;
+    color: #6c757d;
+    line-height: 1;
+    padding: 0 5px;
+    z-index: 10;
+    background: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.searchable-clear-btn:hover {
+    color: #dc3545;
+    background-color: #f8f9fa;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const autoHideAlerts = document.querySelectorAll('.auto-hide-alert');
+    autoHideAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 2500);
+    });
+
+    const ajaxUrl = document.getElementById('filterForm').dataset.ajaxUrl;
+
+    class SearchableSelect {
+        constructor(containerSelector, options = {}) {
+            this.container = document.querySelector(containerSelector);
+            if (!this.container) return;
+            this.input = this.container.querySelector('.searchable-input');
+            this.dropdown = this.container.querySelector('.searchable-dropdown');
+            this.hiddenInput = this.container.querySelector('input[type="hidden"]');
+            this.clearButton = null;
+            this.placeholder = options.placeholder || 'Type to search...';
+            this.onSelect = options.onSelect || function() {};
+            this.originalItems = [];
+            this.selectedValue = '';
+            this.selectedText = '';
+            this.init();
+        }
+        init() {
+            this.addClearButton();
+            this.originalItems = Array.from(this.dropdown.children).map(item => ({
+                element: item.cloneNode(true),
+                value: item.dataset.value,
+                text: item.textContent.trim().toLowerCase(),
+                originalText: item.textContent.trim(),
+                isSelected: item.dataset.selected === 'true'
+            }));
+            const selectedItem = this.originalItems.find(item => item.isSelected);
+            if (selectedItem && selectedItem.value) {
+                this.selectItem(selectedItem.value, selectedItem.originalText, false);
+            }
+            this.setupEvents();
+        }
+        addClearButton() {
+            const clearBtn = document.createElement('span');
+            clearBtn.innerHTML = '&times;';
+            clearBtn.className = 'searchable-clear-btn';
+            clearBtn.title = 'Clear selection';
+            clearBtn.style.display = 'none';
+            this.input.parentNode.style.position = 'relative';
+            this.input.parentNode.appendChild(clearBtn);
+            this.clearButton = clearBtn;
+            clearBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.clear();
+            });
+        }
+        setupEvents() {
+            this.input.addEventListener('focus', () => { this.showDropdown(); });
+            this.input.addEventListener('click', () => { this.showDropdown(); });
+            this.input.addEventListener('input', (e) => {
+                this.showDropdown();
+                this.filterItems();
+                if (this.input.value.trim() === '') { this.clear(false); }
+            });
+            this.input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (this.input.value !== this.selectedText) { this.input.value = this.selectedText || ''; }
+                    this.hideDropdown();
+                }, 200);
+            });
+            document.addEventListener('click', (e) => {
+                if (!this.container.contains(e.target)) {
+                    this.hideDropdown();
+                    if (this.input.value !== this.selectedText) { this.input.value = this.selectedText || ''; }
+                }
+            });
+        }
+        showDropdown() { this.dropdown.style.display = 'block'; this.filterItems(); }
+        hideDropdown() { this.dropdown.style.display = 'none'; }
+        filterItems() {
+            const searchTerm = this.input.value.toLowerCase().trim();
+            this.dropdown.innerHTML = '';
+            let visibleCount = 0;
+            this.originalItems.forEach(item => {
+                if (item.value === '' || searchTerm === '' || item.text.includes(searchTerm)) {
+                    const clonedItem = item.element.cloneNode(true);
+                    if (item.value === this.selectedValue) { clonedItem.classList.add('selected'); }
+                    else { clonedItem.classList.remove('selected'); }
+                    clonedItem.addEventListener('click', (e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        this.selectItem(item.value, item.originalText);
+                    });
+                    this.dropdown.appendChild(clonedItem);
+                    visibleCount++;
+                }
+            });
+            if (visibleCount <= 1 && searchTerm !== '') {
+                const noResults = document.createElement('div');
+                noResults.className = 'no-results';
+                noResults.textContent = 'No results found';
+                this.dropdown.appendChild(noResults);
+            }
+        }
+        selectItem(value, text, triggerCallback = true) {
+            this.selectedValue = value;
+            this.selectedText = text;
+            this.input.value = text;
+            this.hiddenInput.value = value;
+            if (value) { this.input.classList.add('has-value'); this.clearButton.style.display = 'block'; }
+            else { this.input.classList.remove('has-value'); this.clearButton.style.display = 'none'; }
+            this.hideDropdown();
+            if (triggerCallback) { this.onSelect(value, text); }
+        }
+        clear(triggerCallback = true) {
+            this.selectedValue = ''; this.selectedText = '';
+            this.input.value = ''; this.hiddenInput.value = '';
+            this.input.classList.remove('has-value');
+            this.clearButton.style.display = 'none';
+            if (triggerCallback) { this.onSelect('', ''); }
+        }
+        reset() { this.clear(false); }
+        updateOptions(newOptions, label) {
+            this.originalItems = [{
+                element: this.createDropdownElement('', `-- All ${label} --`),
+                value: '', text: `-- all ${label.toLowerCase()} --`,
+                originalText: `-- All ${label} --`, isSelected: false
+            }];
+            newOptions.forEach(option => {
+                this.originalItems.push({
+                    element: this.createDropdownElement(option, option),
+                    value: option, text: option.toLowerCase(),
+                    originalText: option, isSelected: false
+                });
+            });
+            if (this.dropdown.style.display === 'block') { this.filterItems(); }
+        }
+        createDropdownElement(value, text) {
+            const div = document.createElement('div');
+            div.className = 'dropdown-item';
+            div.dataset.value = value;
+            div.textContent = text;
+            return div;
+        }
+        setLoading(isLoading) {
+            if (isLoading) { this.input.classList.add('loading'); this.input.disabled = true; }
+            else { this.input.classList.remove('loading'); this.input.disabled = false; }
+        }
+    }
+
+    const bjoSelect = new SearchableSelect('#bjo_searchable', { placeholder: 'Type to search BJO...' });
+    const btSelect = new SearchableSelect('#bt_searchable', { placeholder: 'Type to search BT...' });
+
+    document.getElementById('processSelect').addEventListener('change', function() {
+        const processId = this.value;
+        if (bjoSelect) bjoSelect.reset();
+        if (btSelect) btSelect.reset();
+        if (processId) {
+            bjoSelect.setLoading(true); btSelect.setLoading(true);
+            bjoSelect.input.placeholder = 'Loading...'; btSelect.input.placeholder = 'Loading...';
+            fetch(`${ajaxUrl}?process=${processId}`)
+                .then(response => { if (!response.ok) throw new Error('Network response was not ok'); return response.json(); })
+                .then(data => {
+                    bjoSelect.updateOptions(data.bjo_options, 'BJO');
+                    btSelect.updateOptions(data.bt_options, 'BT');
+                    bjoSelect.setLoading(false); btSelect.setLoading(false);
+                    bjoSelect.input.placeholder = 'Type to search BJO...';
+                    btSelect.input.placeholder = 'Type to search BT...';
+                })
+                .catch(error => {
+                    console.error('Error fetching filter options:', error);
+                    alert('Failed to load filter options. Please try again.');
+                    bjoSelect.setLoading(false); btSelect.setLoading(false);
+                    bjoSelect.input.placeholder = 'Type to search BJO...';
+                    btSelect.input.placeholder = 'Type to search BT...';
+                });
+        } else {
+            document.getElementById('filterForm').submit();
+        }
+    });
+
+    document.getElementById('yearSelect').addEventListener('change', function() {
+        const monthSelect = document.getElementById('monthSelect');
+        if (this.value) { monthSelect.disabled = false; }
+        else { monthSelect.disabled = true; monthSelect.value = ''; }
+    });
+});
+
+function confirmEdit(bjo, editUrl) {
+    document.getElementById('bjoToEdit').textContent = bjo;
+    document.getElementById('editConfirmButton').href = editUrl;
+    var editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    editModal.show();
+}
+
+function confirmDelete(bjo, id) {
+    document.getElementById('bjoToDelete').textContent = bjo;
+    document.getElementById('deleteForm').action = "{% url 'joborder_delete' 0 %}".replace('0', id);
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+{% endblock %}

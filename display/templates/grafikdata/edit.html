@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Edit Entry Data</h2>
+
+    <form method="post" class="card p-4">
+        {% csrf_token %}
+        
+        <!-- Basic Information Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label">Tanggal <span class="text-danger">*</span></label>
+                <input type="date" name="date" class="form-control" value="{{ item.date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Process</label>
+                <select name="process" class="form-control">
+                    <option value="">-- Pilih Process --</option>
+                    {% for process in processes %}
+                        <option value="{{ process.id }}" {% if item.process.id == process.id %}selected{% endif %}>
+                            {{ process.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Machine</label>
+                <select name="machine" class="form-control">
+                    <option value="">-- Pilih Machine --</option>
+                    {% for machine in machines %}
+                        <option value="{{ machine.id }}" {% if item.machine.id == machine.id %}selected{% endif %}>
+                            {{ machine.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Shift</label>
+                <select name="shift" class="form-control">
+                    <option value="">-- Pilih Shift --</option>
+                    {% for shift in shifts %}
+                        <option value="{{ shift.id }}" {% if item.shift.id == shift.id %}selected{% endif %}>
+                            {{ shift.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Current Calculations Display -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="alert alert-light border p-3">
+                    <h6 class="mb-2"><i class="fas fa-calculator me-1"></i> Perhitungan Otomatis:</h6>
+                    <div class="d-flex justify-content-between">
+                        <span>Actual Hours:</span>
+                        <strong>{{ item.actual_hours|floatformat:2|default:"-" }} hrs</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                {% if item.oee %}
+                <div class="alert alert-success mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    <strong>OEE Saat Ini:</strong> 
+                    <span class="badge {% if item.oee >= 80 %}bg-success{% elif item.oee >= 60 %}bg-warning text-dark{% else %}bg-danger{% endif %} fs-6">
+                        {{ item.oee|floatformat:2 }}%
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Hours and Performance Data Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label">Booking Hours</label>
+                <div class="input-group">
+                    <input type="number" name="booking_hours" class="form-control" step="0.01" 
+                           placeholder="0.00" value="{{ item.booking_hours }}">
+                    <span class="input-group-text">hrs</span>
+                </div>
+                <small class="form-text text-muted">Jam yang direncanakan</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Output</label>
+                <div class="input-group">
+                    <input type="number" name="output" class="form-control" step="0.50" 
+                           placeholder="0.00" value="{{ item.output }}">
+                    <span class="input-group-text">end</span>
+                </div>
+                <small class="form-text text-muted">Output aktual produksi</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Cycle Time (CT)</label>
+                <div class="input-group">
+                    <input type="number" name="ct" class="form-control" step="0.01" 
+                           placeholder="0.00" value="{{ item.ct }}">
+                    <span class="input-group-text">hrs</span>
+                </div>
+                <small class="form-text text-muted">Waktu siklus ideal per unit</small>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label">Reject</label>
+                <div class="input-group">
+                    <input type="number" name="reject" class="form-control" step="0.01" 
+                           placeholder="0.00" value="{{ item.reject }}">
+                    <span class="input-group-text">end</span>
+                </div>
+                <small class="form-text text-muted">Jumlah produk reject</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Non Recordable</label>
+                <div class="input-group">
+                    <input type="number" name="non_recordable" class="form-control" step="0.01" 
+                           placeholder="0.00" value="{{ item.non_recordable }}">
+                    <span class="input-group-text">hrs</span>
+                </div>
+                <small class="form-text text-muted">Jam downtime/tidak terekam</small>
+            </div>
+        </div>
+
+        <!-- OEE Formula Information -->
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-calculator me-2"></i>
+            <strong>Formula Perhitungan OEE:</strong>
+            <div class="mt-2">
+                <div class="row g-2 mb-2">
+                    <div class="col-md-12">
+                        <small class="d-block"><strong>Actual Hours:</strong></small>
+                        <small class="text-muted">Booking Hours - Non Recordable</small>
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <small class="d-block"><strong>Availability:</strong></small>
+                        <small class="text-muted">Actual Hours ÷ Booking Hours</small>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="d-block"><strong>Performance:</strong></small>
+                        <small class="text-muted">(Output × CT) ÷ Actual Hours</small>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="d-block"><strong>Quality:</strong></small>
+                        <small class="text-muted">(Output - Reject) ÷ Output</small>
+                    </div>
+                </div>
+                <div class="mt-2 text-center">
+                    <small><strong>OEE = Availability × Performance × Quality × 100%</strong></small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-end">
+            <button type="submit" class="btn btn-success btn-lg me-2">
+                <i class="fas fa-save me-1"></i> Simpan Perubahan
+            </button>
+            <a href="{% url 'grafikdata_list' %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-arrow-left me-1"></i> Kembali
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+/* Form styling improvements */
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.input-group-text {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0,0,0,.125);
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-light {
+    background-color: #fefefe;
+    border-color: #dee2e6;
+    color: #495057;
+}
+
+/* Button styling */
+.btn-lg {
+    padding: 0.5rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Performance metrics styling */
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.rounded {
+    border-radius: 0.375rem !important;
+}
+
+/* Badge improvements */
+.badge.fs-6 {
+    font-size: 1rem !important;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .btn-lg {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .text-end {
+        text-align: center !important;
+    }
+    
+    .col-md-3, .col-md-4, .col-md-6 {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

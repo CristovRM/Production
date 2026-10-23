@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Edit User</h2>
+
+    <form method="post" enctype="multipart/form-data" class="card p-3">
+        {% csrf_token %}
+        <div class="row g-3">
+            <!-- Basic Info -->
+            <div class="col-12"><h5 class="text-primary">Basic Information</h5><hr></div>
+            
+            <div class="col-md-6">
+                <label class="form-label">Username <span class="text-danger">*</span></label>
+                <input type="text" name="username" class="form-control" value="{{ item.username }}" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" value="{{ item.email }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">First Name</label>
+                <input type="text" name="first_name" class="form-control" value="{{ item.first_name }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Last Name</label>
+                <input type="text" name="last_name" class="form-control" value="{{ item.last_name }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Phone Number</label>
+                <input type="text" name="phone_number" class="form-control" value="{{ item.phone_number }}" placeholder="+62xxx or 08xxx">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Department</label>
+                <input type="text" name="department" class="form-control" value="{{ item.department }}">
+            </div>
+
+            <!-- Role -->
+            <div class="col-12 mt-4"><h5 class="text-primary">Role Information</h5><hr></div>
+            
+            <div class="col-md-6">
+                <label class="form-label">Role <span class="text-danger">*</span></label>
+                <select name="role" id="role" class="form-control" required>
+                    <option value="">-- Choose Role --</option>
+                    {% for role_key, role_display in role_choices %}
+                        <option value="{{ role_key }}" {% if item.role == role_key %}selected{% endif %}>
+                            {{ role_display }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Employee ID for Non-Operator -->
+            <div class="col-md-6" id="manual-employee-section" style="display: {% if item.role != 'operator' and item.role %}block{% else %}none{% endif %};">
+                <label class="form-label">Employee ID</label>
+                <input type="text" name="manual_employee_id" id="manual_employee_id" class="form-control" value="{{ item.manual_employee_id }}" placeholder="e.g., EMP001">
+                <small class="text-muted">Enter employee ID manually</small>
+            </div>
+
+            <!-- Position Section for Leadman -->
+            <div class="col-md-6" id="position-section" style="display: {% if item.role == 'leadman' %}block{% else %}none{% endif %};">
+                <label class="form-label">Position <span class="text-danger">*</span></label>
+                <select name="position" id="position" class="form-control">
+                    <option value="">-- Choose Position --</option>
+                    {% for pos_key, pos_display in position_choices %}
+                        <option value="{{ pos_key }}" {% if item.position == pos_key %}selected{% endif %}>
+                            {{ pos_display }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted">Select THREAD or WELD for Leadman</small>
+            </div>
+
+            <!-- Operator Section -->
+            <div id="operator-section" style="display: {% if item.role == 'operator' %}block{% else %}none{% endif %};">
+                <div class="col-12 mt-3"><h5 class="text-primary">Operator Information</h5><hr></div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">Link to Operator <span class="text-danger">*</span></label>
+                    <select name="operator" id="operator" class="form-control">
+                        <option value="">-- Choose Operator --</option>
+                        {% for op in operators %}
+                            <option value="{{ op.id }}" {% if item.operator and item.operator.id == op.id %}selected{% endif %}>
+                                {{ op.employee_id }} - {{ op.name }} ({{ op.work_station }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Employee ID and Position will be taken from selected operator</small>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label">Operator Status</label>
+                    <div class="mt-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_active_operator" id="is_active_operator" {% if item.is_active_operator %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active_operator">
+                                Active as Operator
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Info (Read-only) -->
+                {% if item.operator %}
+                <div class="col-12 mt-2">
+                    <div class="alert alert-info">
+                        <strong>Current Operator Info:</strong><br>
+                        Employee ID: {{ item.operator.employee_id }}<br>
+                        Full Name: {{ item.operator.name }}<br>
+                        Work Station: {{ item.work_station }}<br>
+                        Position: {{ item.operator.position }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Security -->
+            <div class="col-12 mt-4"><h5 class="text-primary">Security</h5><hr></div>
+            
+            <div class="col-md-6">
+                <label class="form-label">New Password</label>
+                <input type="password" name="password" class="form-control">
+                <small class="text-muted">Leave empty if you don't want to change password</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">New Password Confirmation</label>
+                <input type="password" name="confirm_password" class="form-control">
+            </div>
+
+            <!-- Signature & Status -->
+            <div class="col-12 mt-4"><h5 class="text-primary">Additional</h5><hr></div>
+            
+            <div class="col-md-6">
+                <label class="form-label">Signature</label>
+                {% if item.signature %}
+                    <div class="mb-2">
+                        <img src="{{ item.signature.url }}" alt="Current Signature" style="max-height: 100px; border: 1px solid #ddd; padding: 5px;">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="remove_signature" id="remove_signature">
+                            <label class="form-check-label" for="remove_signature">
+                                Remove current signature
+                            </label>
+                        </div>
+                    </div>
+                {% endif %}
+                <input type="file" name="signature" class="form-control" accept="image/*">
+                <small class="text-muted">Upload new signature to replace the current one</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Account Status</label>
+                <div class="mt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {% if item.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="is_active">
+                            Account Active
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 text-end">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save me-1"></i> Save Changes
+            </button>
+            <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                <i class="fas fa-times me-1"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Show/hide sections based on role selection
+document.getElementById('role').addEventListener('change', function() {
+    const operatorSection = document.getElementById('operator-section');
+    const operatorField = document.getElementById('operator');
+    const manualEmployeeSection = document.getElementById('manual-employee-section');
+    const manualEmployeeField = document.getElementById('manual_employee_id');
+    const positionSection = document.getElementById('position-section');
+    const positionField = document.getElementById('position');
+    
+    if (this.value === 'operator') {
+        // Show operator section
+        operatorSection.style.display = 'block';
+        operatorField.required = true;
+        
+        // Hide manual employee ID and position
+        manualEmployeeSection.style.display = 'none';
+        manualEmployeeField.value = '';
+        positionSection.style.display = 'none';
+        positionField.required = false;
+        positionField.value = '';
+    } else if (this.value === 'leadman') {
+        // Show manual employee ID and position for Leadman
+        manualEmployeeSection.style.display = 'block';
+        positionSection.style.display = 'block';
+        positionField.required = true;
+        
+        // Hide operator section
+        operatorSection.style.display = 'none';
+        operatorField.required = false;
+        operatorField.value = '';
+    } else if (this.value !== '') {
+        // Show manual employee ID for other roles
+        manualEmployeeSection.style.display = 'block';
+        
+        // Hide operator section and position
+        operatorSection.style.display = 'none';
+        operatorField.required = false;
+        operatorField.value = '';
+        positionSection.style.display = 'none';
+        positionField.required = false;
+        positionField.value = '';
+    } else {
+        // Hide all if no role selected
+        operatorSection.style.display = 'none';
+        operatorField.required = false;
+        operatorField.value = '';
+        manualEmployeeSection.style.display = 'none';
+        manualEmployeeField.value = '';
+        positionSection.style.display = 'none';
+        positionField.required = false;
+        positionField.value = '';
+    }
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const roleField = document.getElementById('role');
+    const roleValue = roleField.value;
+    
+    if (roleValue === 'operator') {
+        document.getElementById('operator-section').style.display = 'block';
+        document.getElementById('operator').required = true;
+        document.getElementById('manual-employee-section').style.display = 'none';
+        document.getElementById('position-section').style.display = 'none';
+    } else if (roleValue === 'leadman') {
+        document.getElementById('manual-employee-section').style.display = 'block';
+        document.getElementById('position-section').style.display = 'block';
+        document.getElementById('position').required = true;
+        document.getElementById('operator-section').style.display = 'none';
+    } else if (roleValue !== '') {
+        document.getElementById('manual-employee-section').style.display = 'block';
+        document.getElementById('operator-section').style.display = 'none';
+        document.getElementById('position-section').style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

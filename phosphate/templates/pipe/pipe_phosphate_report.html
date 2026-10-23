@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Pipe Phosphate Report</h2>
+
+    <!-- Filter Form -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label class="form-label">Month</label>
+            <select name="month" class="form-select">
+                <option value="">All</option>
+                {% for m_val, m_name in months_available %}
+                    <option value="{{ m_val }}" {% if month|default:'' == m_val|stringformat:"s" %}selected{% endif %}>
+                        {{ m_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Year</label>
+            <select name="year" class="form-select">
+                <option value="">All</option>
+                {% for y in years_available %}
+                    <option value="{{ y }}" {% if year|default:'' == y|stringformat:"s" %}selected{% endif %}>
+                        {{ y }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+
+
+    <!-- Report Table -->
+    <div class="card">
+        <div class="card-body">
+            <table id="pipePhosphateTable" class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>No</th>
+                        <th>Date</th>
+                        <th>Joint Number</th>
+                        <th>Station</th>
+                        <th>Shift</th>
+                        <th>Operator</th>
+                        <th>BOX Side Phosphated</th>
+                        <th>PIN Side Phosphated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                        <tr>
+                            <td>{{ row.no }}</td>
+                            <td>{{ row.date|date:"d M Y" }}</td>
+                            <td>{{ row.joint_number }}</td>
+                            <td>{{ row.station }}</td>
+                            <td>{{ row.shift }}</td>
+                            <td>{{ row.operator }}</td>
+                            <td class="text-center">{{ row.box_phosphated|safe }}</td>
+                            <td class="text-center">{{ row.pin_phosphated|safe }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.1.2/css/buttons.bootstrap5.css">
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/dataTables.buttons.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.bootstrap5.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.1.2/js/buttons.colVis.min.js"></script>
+
+<script>
+    new DataTable('#pipePhosphateTable', {
+        responsive: true,
+        autoWidth: false,
+        scrollX: false,
+        layout: {
+            topStart: {
+                buttons: [
+                    {
+                        extend: 'copyHtml5',
+                        title: 'Pipe Phosphate Report'
+                    },
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Pipe Phosphate Report'
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        title: 'Pipe Phosphate Report',
+                        orientation: 'potrait',
+                        pageSize: 'A4',
+                        customize: function(doc) {
+                            // Replace simbol centang/silang agar pdfMake bisa render
+                            doc.content[1].table.body.forEach(function(row) {
+                                for (var i = 0; i < row.length; i++) {
+                                    if (row[i].text) {
+                                        // Pastikan pakai unicode centang yang aman
+                                        row[i].text = row[i].text
+                                            .replace(/✔/g, 'YES') // centang
+                                            .replace(/✘/g, 'NO'); // silang
+                                    }
+                                }
+                            });
+                        }
+                    },
+                    {
+                        extend: 'colvis',
+                        text: 'Column Visibility'
+                    }
+                ]
+            }
+        }
+    });
+</script>
+
+{% endblock %}

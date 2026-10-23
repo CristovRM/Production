@@ -1,0 +1,237 @@
+{% extends 'joborder/report_xl100_wbase.html' %}
+
+{% block extra_style %}
+<style>
+    body {
+        font-size: 10px;
+    }
+    
+    .page-container {
+        padding: 12px;
+    }
+    
+    .tracking-table {
+        font-size: 8px;
+        margin-top: 8px;
+        margin-bottom: 25px;
+    }
+    
+    .tracking-table th,
+    .tracking-table td {
+        padding: 3px 2px;
+        font-size: 8px;
+        line-height: 1.2;
+    }
+    
+    .row-number {
+        width: 22px;
+        padding: 2px 1px;
+    }
+    
+    .joint-col {
+        width: 45px;
+    }
+    
+    .date-col {
+        width: 58px;
+    }
+    
+    .welder-col {
+        width: 65px;
+    }
+    
+    .protector-col {
+        width: 52px;
+    }
+    
+    .bevel-col {
+        width: 60px;
+    }
+    
+    .grind-col {
+        width: 60px;
+    }
+    
+    .tally-col {
+        width: 42px;
+    }
+    
+    .header-row th {
+        font-size: 8px;
+        padding: 3px 2px;
+        height: 28px;
+        vertical-align: middle;
+        line-height: 1.1;
+        font-weight: bold;
+    }
+    
+    .data-row {
+        height: 24px;
+    }
+    
+    .data-row td {
+        padding: 3px 2px;
+        font-size: 8px;
+        vertical-align: middle;
+    }
+
+    .header-section {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+    }
+    
+    .info-line {
+        margin-bottom: 2px;
+        font-size: 10px;
+    }
+
+    /* Toggle Buttons */
+    .toggle-container {
+        position: fixed;
+        top: 50px;
+        right: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 1000;
+    }
+    
+    @media print {
+        .toggle-container {
+            display: none !important;
+        }
+    }
+    
+    .toggle-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 12px;
+        transition: background 0.3s;
+        min-width: 150px;
+        font-weight: 500;
+    }
+    
+    .toggle-btn:hover {
+        background: #218838;
+    }
+    
+    .toggle-btn.inactive {
+        background: #6c757d;
+    }
+    
+    .toggle-btn.inactive:hover {
+        background: #5a6268;
+    }
+
+    /* Hide column groups */
+    .hide-box-section .box-date-col,
+    .hide-box-section .box-welder-col,
+    .hide-box-section .box-forging-col {
+        display: none;
+    }
+    
+    .hide-float-section .float-date-col,
+    .hide-float-section .float-welder-col,
+    .hide-float-section .float-shoe-col {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block table_content %}
+<div class="toggle-container no-print">
+    <button class="toggle-btn" id="toggleBox" onclick="toggleColumn('box')">Hide Box Section</button>
+    <button class="toggle-btn" id="toggleFloat" onclick="toggleColumn('float')">Hide Float Shoe Section</button>
+</div>
+
+<table class="tracking-table" id="mainTable">
+    <thead>
+        <tr class="header-row">
+            <th rowspan="2" class="row-number">#</th>
+            <th rowspan="2" class="joint-col">Joint #</th>
+            <th rowspan="2" class="date-col box-date-col">Date</th>
+            <th rowspan="2" class="welder-col box-welder-col">Welder</th>
+            <th colspan="1" class="box-forging-col">Scan Oper #</th>
+            <th rowspan="2" class="date-col float-date-col">Date</th>
+            <th rowspan="2" class="welder-col float-welder-col">Welder</th>
+            <th colspan="1" class="float-shoe-col">Scan Oper #</th>
+            <th colspan="4">Scan Oper #</th>
+            <th rowspan="2" class="tally-col">Tally</th>
+        </tr>
+        <tr class="header-row">
+            <th class="protector-col box-forging-col">Box Forging#</th>
+            <th class="protector-col float-shoe-col">Float Shoe#</th>
+            <th class="bevel-col">Bevel Box</th>
+            <th class="bevel-col">Bevel Pin</th>
+            <th class="grind-col">Grind Box</th>
+            <th class="grind-col">Grind Pin</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in joint_tracking %}
+        <tr class="data-row">
+            <td class="row-number">{{ forloop.counter }}</td>
+            <td>{{ item.joint_number|default:"" }}</td>
+            <td class="box-date-col">{{ item.box_date|date:"d M Y"|default:"" }}</td>
+            <td class="box-welder-col">{{ item.box_welder|default:"" }}</td>
+            <td class="box-forging-col">{{ item.box_forging|default:"" }}</td>
+            <td class="float-date-col">{{ item.float_date|date:"d M Y"|default:"" }}</td>
+            <td class="float-welder-col">{{ item.float_welder|default:"" }}</td>
+            <td class="float-shoe-col">{{ item.float_shoe|default:"" }}</td>
+            <td>{% if item.bevel_box %}{{ item.bevel_box_operator|default:"" }}{% endif %}</td>
+            <td>{% if item.bevel_pin %}{{ item.bevel_pin_operator|default:"" }}{% endif %}</td>
+            <td>{% if item.grind_box %}{{ item.grind_box_operator|default:"" }}{% endif %}</td>
+            <td>{% if item.grind_pin %}{{ item.grind_pin_operator|default:"" }}{% endif %}</td>
+            <td>{{ item.tally|default:"" }}</td>
+        </tr>
+        {% empty %}
+        <tr class="data-row">
+            <td colspan="13" style="text-align:center;">No data available</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div style="margin-top: 4px; font-size: 8px; font-weight: bold;">
+    BB-1 REV 0
+</div>
+
+<script>
+    let boxHidden = false;
+    let floatHidden = false;
+    
+    function toggleColumn(type) {
+        const table = document.getElementById('mainTable');
+        
+        if (type === 'box') {
+            const btn = document.getElementById('toggleBox');
+            boxHidden = !boxHidden;
+            if (boxHidden) {
+                table.classList.add('hide-box-section');
+                btn.textContent = 'Show Box Section';
+                btn.classList.add('inactive');
+            } else {
+                table.classList.remove('hide-box-section');
+                btn.textContent = 'Hide Box Section';
+                btn.classList.remove('inactive');
+            }
+        } else if (type === 'float') {
+            const btn = document.getElementById('toggleFloat');
+            floatHidden = !floatHidden;
+            if (floatHidden) {
+                table.classList.add('hide-float-section');
+                btn.textContent = 'Show Float Shoe Section';
+                btn.classList.add('inactive');
+            } else {
+                table.classList.remove('hide-float-section');
+                btn.textContent = 'Hide Float Shoe Section';
+                btn.classList.remove('inactive');
+            }
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+{% block title %}Add Connector{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Add New Connector</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" class="card p-4" id="connectorForm">
+        {% csrf_token %}
+        
+        <div class="row g-3">
+            <!-- BJO Selection -->
+            <div class="col-12 col-md-6">
+                <label for="bjo" class="form-label">
+                    Select BJO <span class="text-danger">*</span>
+                </label>
+                <select name="bjo" id="bjo" class="form-select" required>
+                    <option value="">-- Select BJO --</option>
+                    {% for job in job_list %}
+                        <option value="{{ job.id }}" 
+                                data-customer="{{ job.customer }}" 
+                                data-size="{{ job.size }}"
+                                data-conn="{{ job.conn }}"
+                                data-process="{{ job.process_type }}"
+                                data-product="{{ job.product }}">
+                            {{ job.bjo }} | {{ job.customer }} | {{ job.process_type }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <small class="form-text text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    <strong>Welding:</strong> All BJO | 
+                    <strong>Threading:</strong> Only XLW-S, XLW-GT, XLW
+                </small>
+            </div>
+
+            <!-- BJO Info Display -->
+            <div class="col-12 col-md-6" id="bjo_info_container" style="display: none;">
+                <div class="alert alert-info mb-0">
+                    <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>BJO Details</h6>
+                    <p class="mb-1"><strong>Customer:</strong> <span id="info_customer">-</span></p>
+                    <p class="mb-1"><strong>Process:</strong> <span id="info_process">-</span></p>
+                    <p class="mb-1"><strong>Size:</strong> <span id="info_size">-</span></p>
+                    <p class="mb-1"><strong>Connection:</strong> <span id="info_conn">-</span></p>
+                    <p class="mb-0"><strong>Product:</strong> <span id="info_product">-</span></p>
+                </div>
+            </div>
+
+            <!-- Joint Number Selection (Dropdown) -->
+            <div class="col-12 col-md-6">
+                <label for="joint_number" class="form-label">
+                    Joint Number <span class="text-danger">*</span>
+                </label>
+                <select name="joint_number" id="joint_number" class="form-select" required disabled>
+                    <option value="">-- Select BJO first --</option>
+                </select>
+                <small class="form-text text-muted" id="joint_loading" style="display: none;">
+                    <i class="fas fa-spinner fa-spin me-1"></i>Loading joint numbers...
+                </small>
+                <small class="form-text text-muted" id="joint_info" style="display: none;">
+                    <i class="fas fa-check-circle me-1 text-success"></i>
+                    <span id="joint_count">0</span> joint number(s) | 
+                    <span id="total_connectors">0</span> connector(s) total
+                </small>
+            </div>
+
+            <!-- Connector Number (Manual Input) -->
+            <div class="col-12 col-md-6">
+                <label for="conn_number" class="form-label">
+                    Connector Number <span class="text-danger">*</span>
+                </label>
+                <input type="text" 
+                       name="conn_number" 
+                       id="conn_number"
+                       class="form-control" 
+                       placeholder="Enter connector number manually..." 
+                       required>
+                <small class="form-text text-muted">
+                    <i class="fas fa-keyboard me-1"></i>Manual input - must be globally unique
+                </small>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="alert alert-warning mt-4" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Important Changes:</strong>
+            <ul class="mb-0 mt-2">
+                <li>✅ <strong>NEW:</strong> Each Joint can have MULTIPLE Connectors (e.g., for PIN and BOX)</li>
+                <li>Joint Number is selected from existing joints in the BJO</li>
+                <li>Connector Number must be entered manually and <strong>must be globally unique</strong></li>
+                <li>System will show how many connectors already exist for each joint</li>
+            </ul>
+        </div>
+
+        <!-- Tombol aksi -->
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-success flex-fill" id="submit_btn" disabled>
+                <i class="fas fa-save me-2"></i>Save Connector
+            </button>
+            <button type="reset" class="btn btn-warning flex-fill">
+                <i class="fas fa-redo me-2"></i>Reset Form
+            </button>
+            <a href="{% url 'connector_list' %}" class="btn btn-secondary flex-fill">
+                <i class="fas fa-arrow-left me-2"></i>Back to List
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .alert-info {
+        border-left: 4px solid #17a2b8;
+        animation: slideIn 0.3s ease;
+    }
+    
+    .alert-warning {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    #joint_number:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+    
+    #submit_btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bjoSelect = document.getElementById('bjo');
+    const bjoInfoContainer = document.getElementById('bjo_info_container');
+    const infoCustomer = document.getElementById('info_customer');
+    const infoProcess = document.getElementById('info_process');
+    const infoSize = document.getElementById('info_size');
+    const infoConn = document.getElementById('info_conn');
+    const infoProduct = document.getElementById('info_product');
+    
+    const jointSelect = document.getElementById('joint_number');
+    const jointLoading = document.getElementById('joint_loading');
+    const jointInfo = document.getElementById('joint_info');
+    const jointCount = document.getElementById('joint_count');
+    const totalConnectors = document.getElementById('total_connectors');
+    
+    const connNumberInput = document.getElementById('conn_number');
+    const submitBtn = document.getElementById('submit_btn');
+    const connectorForm = document.getElementById('connectorForm');
+
+    // Load joint numbers when BJO is selected
+    bjoSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (this.value) {
+            // Show BJO info
+            const customer = selectedOption.dataset.customer || '-';
+            const process = selectedOption.dataset.process || '-';
+            const size = selectedOption.dataset.size || '-';
+            const conn = selectedOption.dataset.conn || '-';
+            const product = selectedOption.dataset.product || '-';
+            
+            infoCustomer.textContent = customer;
+            infoProcess.textContent = process;
+            infoSize.textContent = size;
+            infoConn.textContent = conn;
+            infoProduct.textContent = product;
+            
+            bjoInfoContainer.style.display = 'block';
+            
+            // Load joint numbers via AJAX
+            loadJointNumbers(this.value);
+        } else {
+            bjoInfoContainer.style.display = 'none';
+            jointSelect.innerHTML = '<option value="">-- Select BJO first --</option>';
+            jointSelect.disabled = true;
+            jointInfo.style.display = 'none';
+            submitBtn.disabled = true;
+        }
+    });
+
+    // Enable submit button when all required fields are filled
+    function checkFormValidity() {
+        if (bjoSelect.value && jointSelect.value && connNumberInput.value.trim()) {
+            submitBtn.disabled = false;
+        } else {
+            submitBtn.disabled = true;
+        }
+    }
+    
+    jointSelect.addEventListener('change', checkFormValidity);
+    connNumberInput.addEventListener('input', checkFormValidity);
+
+    // ✅ FIXED: Load ALL joint numbers (tidak filter yang sudah punya connector)
+    function loadJointNumbers(bjoId) {
+        jointLoading.style.display = 'block';
+        jointInfo.style.display = 'none';
+        jointSelect.disabled = true;
+        jointSelect.innerHTML = '<option value="">-- Loading... --</option>';
+        
+        const baseUrl = window.location.origin;
+        const pathPrefix = window.location.pathname.split('/').slice(0, 2).join('/');
+        const url = `${baseUrl}${pathPrefix}/connector/get-joint-numbers/?bjo_id=${bjoId}`;
+        
+        console.log('🔍 Fetching joint numbers from:', url);
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin'
+        })
+            .then(response => {
+                console.log('📡 Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Response data:', data);
+                jointLoading.style.display = 'none';
+                
+                if (data.success === false || data.error) {
+                    console.error('❌ API Error:', data.error);
+                    alert('Error loading joint numbers: ' + (data.error || 'Unknown error'));
+                    jointSelect.innerHTML = '<option value="">-- Error loading data --</option>';
+                    return;
+                }
+                
+                const jointInfoList = data.joint_info || [];
+                const jointNumbers = data.joint_numbers || [];
+                
+                jointSelect.innerHTML = '<option value="">-- Select Joint Number --</option>';
+                
+                if (jointInfoList.length === 0 && jointNumbers.length === 0) {
+                    jointSelect.innerHTML += '<option value="" disabled>No joint numbers found for this BJO</option>';
+                    jointInfo.style.display = 'none';
+                    alert('Info: No joint numbers found for this BJO.');
+                } else {
+                    // ✅ TAMPILKAN SEMUA JOINT dengan info jumlah connector
+                    if (jointInfoList.length > 0) {
+                        // Gunakan joint_info yang lebih detail
+                        jointInfoList.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.joint_number;
+                            
+                            // Tambahkan info jumlah connector yang sudah ada
+                            if (item.connector_count > 0) {
+                                option.textContent = `${item.joint_number} (${item.connector_count} connector${item.connector_count > 1 ? 's' : ''})`;
+                                option.style.color = '#0066cc';
+                                option.style.fontWeight = '500';
+                            } else {
+                                option.textContent = item.joint_number;
+                            }
+                            
+                            jointSelect.appendChild(option);
+                        });
+                    } else {
+                        // Fallback: gunakan joint_numbers biasa
+                        jointNumbers.forEach(joint => {
+                            const option = document.createElement('option');
+                            option.value = joint;
+                            option.textContent = joint;
+                            jointSelect.appendChild(option);
+                        });
+                    }
+                    
+                    // Update info display
+                    jointCount.textContent = data.total_joints || jointNumbers.length;
+                    totalConnectors.textContent = data.total_connectors || 0;
+                    jointInfo.style.display = 'block';
+                    
+                    console.log(`📊 Stats - Total joints: ${data.total_joints}, Total connectors: ${data.total_connectors}`);
+                }
+                
+                jointSelect.disabled = false;
+                checkFormValidity();
+            })
+            .catch(error => {
+                console.error('❌ Fetch Error:', error);
+                jointLoading.style.display = 'none';
+                jointSelect.innerHTML = '<option value="">-- Error loading data --</option>';
+                
+                let errorMsg = 'Failed to load joint numbers.\n\n';
+                errorMsg += 'Error: ' + error.message + '\n\n';
+                errorMsg += 'Please check browser console for details.';
+                
+                alert(errorMsg);
+            });
+    }
+
+    // Form validation before submit
+    connectorForm.addEventListener('submit', function(e) {
+        const bjo = bjoSelect.options[bjoSelect.selectedIndex].text;
+        const jointNumber = jointSelect.value;
+        const connNumber = connNumberInput.value.trim();
+        
+        if (!bjoSelect.value || !jointNumber || !connNumber) {
+            e.preventDefault();
+            alert('⚠️ All fields are required!');
+            return false;
+        }
+        
+        // ✅ Cek apakah joint sudah punya connector (dari option text)
+        const selectedOption = jointSelect.options[jointSelect.selectedIndex];
+        const optionText = selectedOption.textContent;
+        const hasExisting = optionText.includes('connector');
+        
+        let confirmMsg = '✅ Confirm Add Connector\n\n' +
+            'BJO: ' + bjo + '\n' +
+            'Joint Number: ' + jointNumber + '\n' +
+            'Connector Number: ' + connNumber + '\n\n';
+        
+        if (hasExisting) {
+            confirmMsg += '⚠️ Note: This joint already has other connectors.\n\n';
+        }
+        
+        confirmMsg += 'Are you sure the data is correct?';
+        
+        const confirmation = confirm(confirmMsg);
+        
+        if (!confirmation) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Reset form handler
+    connectorForm.addEventListener('reset', function() {
+        setTimeout(function() {
+            bjoInfoContainer.style.display = 'none';
+            jointSelect.innerHTML = '<option value="">-- Select BJO first --</option>';
+            jointSelect.disabled = true;
+            jointInfo.style.display = 'none';
+            submitBtn.disabled = true;
+        }, 10);
+    });
+});
+</script>
+{% endblock %}

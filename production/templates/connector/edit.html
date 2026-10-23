@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% block title %}Edit Connector{% endblock%}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Edit Connector</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" class="card p-4" id="editConnectorForm">
+        {% csrf_token %}
+        
+        <!-- Info BJO (Read-only) -->
+        <div class="alert alert-info mb-4">
+            <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>BJO Information</h6>
+            <p class="mb-1"><strong>BJO:</strong> {{ connector.bjo.bjo }}</p>
+            <p class="mb-1"><strong>Customer:</strong> {{ connector.bjo.customer }}</p>
+            <p class="mb-1"><strong>Process:</strong> {{ connector.bjo.process_type }}</p>
+            <p class="mb-1"><strong>Size:</strong> {{ connector.bjo.size }}</p>
+            <p class="mb-0"><strong>Connection:</strong> {{ connector.bjo.conn }}</p>
+        </div>
+
+        <div class="row g-3">
+            <!-- BJO (Hidden) -->
+            <input type="hidden" name="bjo" value="{{ connector.bjo.id }}">
+
+            <!-- Joint Number (Read-only karena sudah ada di sistem) -->
+            <div class="col-12 col-md-6">
+                <label for="joint_number" class="form-label">Joint Number</label>
+                <input type="text" 
+                       name="joint_number" 
+                       id="joint_number"
+                       class="form-control bg-light" 
+                       value="{{ connector.joint_number }}" 
+                       readonly 
+                       required>
+                <small class="form-text text-muted">
+                    <i class="fas fa-lock me-1"></i>Joint number cannot be changed
+                </small>
+            </div>
+
+            <!-- Connector Number (Editable) -->
+            <div class="col-12 col-md-6">
+                <label for="conn_number" class="form-label">
+                    Connector Number <span class="text-danger">*</span>
+                </label>
+                <input type="text" 
+                       name="conn_number" 
+                       id="conn_number"
+                       class="form-control" 
+                       value="{{ connector.conn_number }}" 
+                       placeholder="Enter connector number..."
+                       required
+                       autocomplete="off">
+                <small class="form-text text-muted">
+                    <i class="fas fa-edit me-1"></i>You can update the connector number
+                </small>
+            </div>
+        </div>
+
+        <!-- Info timestamps -->
+        <div class="row g-3 mt-3">
+            <div class="col-12 col-md-6">
+                <small class="text-muted">
+                    <i class="fas fa-calendar-plus me-1"></i>
+                    <strong>Created:</strong> {{ connector.created_at|date:"d M Y H:i" }}
+                </small>
+            </div>
+            <div class="col-12 col-md-6">
+                <small class="text-muted">
+                    <i class="fas fa-calendar-edit me-1"></i>
+                    <strong>Last Modified:</strong> {{ connector.modified_at|date:"d M Y H:i" }}
+                </small>
+            </div>
+        </div>
+
+        <!-- Alert Info -->
+        <div class="alert alert-warning mt-4" role="alert">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note:</strong> Only the Connector Number can be edited. BJO and Joint Number are fixed and cannot be changed.
+        </div>
+
+        <!-- Tombol aksi -->
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-success flex-fill" id="submitBtn">
+                <i class="fas fa-save me-2"></i>Save Changes
+            </button>
+            <button type="button" class="btn btn-warning flex-fill" id="resetBtn">
+                <i class="fas fa-undo me-2"></i>Reset Changes
+            </button>
+            <a href="{% url 'connector_list' %}" class="btn btn-secondary flex-fill">
+                <i class="fas fa-arrow-left me-2"></i>Back to List
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .alert-info {
+        border-left: 4px solid #17a2b8;
+        animation: slideIn 0.3s ease;
+    }
+    
+    .alert-warning {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .bg-light {
+        background-color: #f8f9fa !important;
+        cursor: not-allowed;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        border-radius: 10px;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    #conn_number:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .form-control.is-invalid {
+        border-color: #dc3545;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const connNumberInput = document.getElementById('conn_number');
+    const submitBtn = document.getElementById('submitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const editForm = document.getElementById('editConnectorForm');
+    
+    // Store original value untuk reset
+    const originalConnNumber = '{{ connector.conn_number }}';
+    
+    // Auto focus pada connector number field
+    connNumberInput.focus();
+    
+    // Select text untuk kemudahan edit
+    connNumberInput.select();
+    
+    // Track changes
+    let hasChanges = false;
+    connNumberInput.addEventListener('input', function() {
+        hasChanges = (this.value.trim() !== originalConnNumber);
+        
+        if (hasChanges) {
+            submitBtn.classList.remove('btn-success');
+            submitBtn.classList.add('btn-primary');
+            submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+        } else {
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-success');
+            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>No Changes';
+        }
+        
+        // Real-time validation
+        if (this.value.trim() === '') {
+            this.classList.add('is-invalid');
+            submitBtn.disabled = true;
+        } else {
+            this.classList.remove('is-invalid');
+            submitBtn.disabled = false;
+        }
+    });
+    
+    // Reset button handler
+    resetBtn.addEventListener('click', function() {
+        connNumberInput.value = originalConnNumber;
+        connNumberInput.classList.remove('is-invalid');
+        hasChanges = false;
+        submitBtn.classList.remove('btn-primary');
+        submitBtn.classList.add('btn-success');
+        submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>No Changes';
+        submitBtn.disabled = false;
+        connNumberInput.focus();
+    });
+    
+    // ✅ FIXED: Flag untuk track apakah sedang submit
+    let isSubmitting = false;
+    
+    // Konfirmasi sebelum submit
+    editForm.addEventListener('submit', function(e) {
+        const newConnNumber = connNumberInput.value.trim();
+        
+        // Validasi empty
+        if (!newConnNumber) {
+            e.preventDefault();
+            alert('⚠️ Connector Number cannot be empty!');
+            connNumberInput.focus();
+            connNumberInput.classList.add('is-invalid');
+            return false;
+        }
+        
+        // Check if there are changes
+        if (newConnNumber === originalConnNumber) {
+            e.preventDefault();
+            alert('ℹ️ No changes detected. The connector number is the same as before.');
+            return false;
+        }
+        
+        // Confirmation dialog
+        const confirmation = confirm(
+            '✅ Confirm Update\n\n' +
+            'BJO: {{ connector.bjo.bjo }}\n' +
+            'Joint Number: {{ connector.joint_number }}\n\n' +
+            'Old Connector Number: ' + originalConnNumber + '\n' +
+            'New Connector Number: ' + newConnNumber + '\n\n' +
+            'Are you sure you want to save these changes?'
+        );
+        
+        if (!confirmation) {
+            e.preventDefault();
+            // ✅ FIXED: Reset button state jika user cancel
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-success');
+            submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+            return false;
+        }
+        
+        // ✅ FIXED: Set flag bahwa form sedang di-submit
+        isSubmitting = true;
+        hasChanges = false; // Reset hasChanges agar beforeunload tidak trigger
+        
+        // Disable button to prevent double submit
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    });
+    
+    // ✅ FIXED: Warn user if leaving page with unsaved changes
+    // TAPI tidak trigger saat form sedang di-submit
+    window.addEventListener('beforeunload', function(e) {
+        if (hasChanges && !isSubmitting) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            return e.returnValue;
+        }
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + S to save
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            if (!submitBtn.disabled && hasChanges) {
+                editForm.submit();
+            }
+        }
+        
+        // Ctrl/Cmd + Z to reset (when not in input)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.target !== connNumberInput) {
+            e.preventDefault();
+            resetBtn.click();
+        }
+        
+        // Escape to go back
+        if (e.key === 'Escape') {
+            if (hasChanges) {
+                if (confirm('You have unsaved changes. Are you sure you want to go back?')) {
+                    window.location.href = '{% url "connector_list" %}';
+                }
+            } else {
+                window.location.href = '{% url "connector_list" %}';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
